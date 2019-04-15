@@ -1,0 +1,2 @@
+"0","metrics <- ""cosine"" "
+"0","M <- length(nc.cells) # use as many pricipal points as the number of cells"

@@ -1,0 +1,10 @@
+{
+    "dialog-state" : {
+        "caseSensitive" : false,
+        "filePatterns" : [
+        ],
+        "path" : "~/NC/DynTree",
+        "query" : "ppt.tree",
+        "regex" : false
+    }
+}

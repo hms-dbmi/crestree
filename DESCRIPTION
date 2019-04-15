@@ -1,0 +1,28 @@
+Package: crestree
+Title: Analysis of branching branching trajectories from single-cell data
+Version: 0.1
+Authors@R: c(
+  person("Ruslan", "Soldatov", email = "Ruslan_Soldatov@hms.harvard.edu", role = c("cre","aut")),
+  person("Peter", "Kharchenko", email = "peter_kharchenko@hms.harvard.edu", role = c("aut")))
+Description: The package implements a method to reconstruct transcriptional tree from single-cell data using principal graph approach and provides a set of routines to analyze expression patterns associated with the tree. The package also implements a set of routines to analyze bifurcation points of the tree. 
+Depends: R (>= 3.4.1)
+License: GPL-3
+Encoding: UTF-8
+RoxygenNote: 6.1.1.9000
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Imports: 
+    igraph,
+    mgcv,
+    pcaMethods,
+    quadprog,
+    parallel,
+    Rcpp,
+    inline,
+    RcppArmadillo,
+    Rfast
+LinkingTo: 
+    Rcpp,
+    RcppArmadillo

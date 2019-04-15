@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "Package: crestree\nTitle: Analysis of branching branching trajectories from single-cell data\nVersion: 0.1\nAuthors@R: c(\n  person(\"Ruslan\", \"Soldatov\", email = \"Ruslan_Soldatov@hms.harvard.edu\", role = c(\"cre\",\"aut\")),\n  person(\"Peter\", \"Kharchenko\", email = \"peter_kharchenko@hms.harvard.edu\", role = c(\"aut\")))\nDescription: The package implements a method to reconstruct transcriptional tree from single-cell data using principal graph approach and provides a set of routines to analyze expression patterns associated with the tree. The package also implements a set of routines to analyze bifurcation points of the tree. \nDepends: R (>= 3.4.1)\nLicense: GPL-3\nEncoding: UTF-8\nRoxygenNote: 6.1.1.9000\nSuggests: \n    knitr,\n    rmarkdown\nVignetteBuilder: knitr\nImports: \n    igraph,\n    mgcv,\n    pcaMethods,\n    quadprog,\n    parallel,\n    Rcpp,\n    inline,\n    RcppArmadillo,\n    Rfast\nLinkingTo: \n    Rcpp,\n    RcppArmadillo\n",
+    "created" : 1555351990975.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3627578774",
+    "id" : "32F4E00F",
+    "lastKnownWriteTime" : 1555352380,
+    "last_content_update" : 1555352380412,
+    "path" : "~/NC/crestree/DESCRIPTION",
+    "project_path" : "DESCRIPTION",
+    "properties" : {
+    },
+    "relative_order" : 13,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "dcf"
+}
