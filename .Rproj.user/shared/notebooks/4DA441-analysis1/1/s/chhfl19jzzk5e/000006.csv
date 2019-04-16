@@ -1,2 +1,0 @@
-"0","par(mfrow=c(1,1),mar=c(4,4,1,1))"
-"0","plot(crest$emb,col=crest$clcol,pch=ifelse( rownames(crest$emb)%in%crest$nc.cells,19,1),cex=0.2,xlab=""tSNE 1"",ylab=""tSNE 2"")"
