@@ -28,3 +28,4 @@ doc
 *.out
 *.app
 .Rproj.user
+.Rhistory
