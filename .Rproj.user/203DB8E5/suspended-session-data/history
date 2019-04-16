@@ -1,16 +1,3 @@
-#d <- as.matrix(cor(F))
-#bt <- minimum.spanning.tree(graph.adjacency(1-d,weighted=T,mode="undirected"))
-#d[d<0] <- 0;
-# correlation with exponential decay
-#d <- exp(as.matrix(cor(F))*1)
-# estimate distance between principal points based on the similarity of their releationships with the cells
-#d <- as.matrix(dist(t(R),method='manhattan')); # patchy with realtively close points being completely detached
-# recalculate an R matix using relaxed sigma
-#       Rp <- do.call(rbind,lapply(1:ncol(X),function(i) {
-#           #t(matWVCorr(F,X[,i],W[,i]))
-#         x <- (exp(-(1-matWVCorr(F,X[,i],W[,i]-loc[i])/1)))
-#         x[is.na(x) | is.nan(x)] <- 0;
-#       sx <- sum(x);
 #         if(sx>0) {
 #           t(x/sx)
 #         } else {
@@ -510,3 +497,16 @@ lambda <- 250
 sigma <- 0.045
 ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=lambda, sigma=sigma, metrics=metrics, M=M, err.cut = 5e-3, n.steps=50, seed=1, plot=FALSE)
 plotppt(ppt,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
+devtools::document()
+devtools::use_rcpp()
+devtools::install()
+setwd("/d0/home/solrust/NC/crestree/")
+devtools::load_all("~/NC/crestree")
+devtools::load_all("~/NC/crestree/crestree")
+devtools::document()
+setwd("/d0/home/solrust/NC/crestree/crestree/")
+devtools::document()
+devtools::use_rcpp()
+devtools::install()
+devtools::build_vignettes()
+devtools::build_vignettes(keep_md = T)
