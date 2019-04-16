@@ -4,9 +4,9 @@ title: "Analysis of branching trajectories"
 #date: "2019-04-15"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Analysis of branching trajectories}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Analysis of branching trajectories}
 ---
 
 
