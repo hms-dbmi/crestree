@@ -2,10 +2,7 @@
 title: "Analysis of branching trajectories"
 #author: "Ruslan Soldatov"
 #date: "2019-04-15"
-output: 
-  rmarkdown::html_vignette
-  #html_document:
-  #  keep_md: true
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Analysis of branching trajectories}
   %\VignetteEngine{knitr::rmarkdown}
