@@ -31,7 +31,6 @@ library(RcppArmadillo)
 library(Rfast)
 
 library(crestree)
-#fdbgegerb
 ```
   
 ## Loading the data
@@ -75,7 +74,7 @@ str(wgm)
 
 wgwm <- crest$wgwm # matrix of expression weights
 ```
-Of note, `wgm` and `wgwm` contain only 1169 the most over-dispersed genes (as described in the paper), whereas matrix `fpm` contains 15427 genes. 
+Of note, matrices contain only 1169 the most over-dispersed genes. 
 
 ## Running tree reconstruction
 Algorithm has a number of important parameters to be selected (they can be defined by default, but it is good to have control over them), in particular cell-cell distance `metrics` (cosine-based or euclidean), number of tree principal points (PPs) `M` and tree parameters `lambda` (stringency of the tree) and `sigma` (fuzziness of cells to principal points assignment):
@@ -89,7 +88,7 @@ Now we can model a parsimonious tree using `fpm` experssion matrix:
 lambda <- 150
 sigma <- 0.015
 
-z <- ppt.tree(X=fpm[rownames(wgm),nc.cells], emb=emb, lambda=lambda, sigma=sigma, metrics=metrics, M=M, err.cut = 5e-3, n.steps=50, seed=1, plot=FALSE)
+z <- ppt.tree(X=fpm[,nc.cells], emb=emb, lambda=lambda, sigma=sigma, metrics=metrics, M=M, err.cut = 5e-3, n.steps=50, seed=1, plot=FALSE)
 ```
 
 The reconstructed tree `z`, that is modeled in high-dimensional expression space, can be visualized on top of embedding `emb` using `plotppt` routine:
@@ -97,7 +96,7 @@ The reconstructed tree `z`, that is modeled in high-dimensional expression space
 plotppt(z,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 ```
 
-We next switch to expression matrix `wgm` with weights `wgmw` used in the paper. Of note, optimal tree parameters `lambda` and `sigma` are sensitive to the data properties, such as dataset size or choice of expression matrices. In section **Selection of optimal tree parameters** we discuss a strategy of parameters selection and suggest two guiding routines. Below the tree is modeled and visualized with a new choice of expression matrices:
+We next switch to expression matrix `wgm` with weights `wgmw` used in the paper. Of note, optimal tree parameters `lambda` and `sigma` are sensitive to the data properties, such as dataset size or choice of expression matrices. In section **"Selection of optimal tree parameters"** we discuss a strategy of parameters selection and suggest two guiding routines. Below the tree is modeled and visualized with a new choice of expression matrices:
 ```{r, warning = FALSE, message = FALSE, results = "hide",fig.width = 3, fig.height = 3}
 lambda <- 250 
 sigma <- 0.045
@@ -106,16 +105,16 @@ ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=lambda, sig
 plotppt(ppt,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 ```
 
-\n
+
 Optionally, stable properties of the tree can be assessed using sampling of cells. Below we generate 20 trees through subsampling of 90% of cells without replacement:  
 ```{r}
-#ppt_ensemble <- bootstrap.ppt(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, metrics=metrics, M=as.integer(length(nc.cells)*0.9), lambda=lambda, sigma=sigma, plot=FALSE,
-#                             n.samples=20,n.cores=20, seed=NULL,replace=FALSE)
+ppt_ensemble <- bootstrap.ppt(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, metrics=metrics, M=as.integer(length(nc.cells)*0.9), lambda=lambda, sigma=sigma, plot=FALSE,
+                             n.samples=20,n.cores=20, seed=NULL,replace=FALSE)
 ```
 
 Sampling of trees can be visualized on embedding using routing `plotpptl`:
 ```{r,fig.width = 3, fig.height = 3}
-#plotpptl(ppt_ensemble,emb, cols=adjustcolor("grey",alpha=0.1),alpha=0.05, lwd=1)
+plotpptl(ppt_ensemble,emb, cols=adjustcolor("grey",alpha=0.1),alpha=0.05, lwd=1)
 ```
 
 ## Tree processing
@@ -144,7 +143,7 @@ ppt <- setroot(ppt,root=465)
 Finally, each cell is projected onto the tree. It provides estimates of a cell pseudotime and branch. Probabilistic position of a cell on the tree is naturally delivered by the method and stored in the field `R` of tree object. For example, probailistic distribution of a given cell on the tree is shown below:
 ```{r,fig.width = 3, fig.height = 3}
 cell <- nc.cells[2] # choose a cell
-pprobs <- ppt$R[cell,] # probabilities of tee projections
+pprobs <- ppt$R[cell,] # probabilities of tree projections
 plotppt(ppt,emb,pattern.tree = ppt$R[cell,],cex.tree = 1,lwd.tree = 0.1) # plot probabilities using pattern.tree parameter
 points(emb[cell,1],emb[cell,2],cex=1,pch=19,col="black") # show cell position on embedding
 ```
@@ -162,7 +161,7 @@ We are ready to study gene expression patterns along the tree. The first step is
 ppt <- test.associated.genes(ppt,n.map=1,n.cores = 20,fpm,summary=TRUE)
 ```
 
-A field `stat.association` of `ppt` provides summary statistics of genes association, including amplitude of changes along the tree  `A`, p-value `pval`, B-H adjustment for multiple testing `fdr` and binary classification `sign` of differential expression along the tree. Also, robustness of differential expression is estimated as a fraction `st` of probabilistic projections (if `n.mappings` > 1 in project.cells.onto.ppt) when a gene was detected to be differentially expressed.
+A field `stat.association` of `ppt` provides summary statistics of genes association, including amplitude of changes along the tree  `A`, p-value `pval`, B-H adjustment for multiple testing `fdr` and binary classification `sign` of differential expression along the tree. Also, robustness of differential expression is estimated as a fraction `st` of probabilistic projections (if `n.mappings` > 1 in project.cells.onto.ppt) when a gene was detected as differentially expressed.
 ```{r, results='hide'}
 head(ppt$stat.association[order(ppt$stat.association$pval),])
 ```
@@ -197,13 +196,12 @@ genes.tree <- rownames(ppt$stat.association)[ppt$stat.association$sign==TRUE & p
 ```{r}
 str(genes.tree)
 ```
-Then smoothed expression profiles can be clustered using a variety of methods. Below we use hierarchical clustering with cosine-based similarity:
-
 
 Then smoothed expression profiles can be clustered using a variety of methods. Clusters of genes can be explored using `visualise.clusters` visualization routine, using as a default hierarchical clustering with Ward linkage and cosine-based similarity with predefined number of `clust.n` clusters:
-```{r}
-visualise.clusters(ppt,emb,clust.n = 5,n.best=6,best.method="pca",cex.gene=0.5,cex.cell=0.05,cex.tree=0.2,reclust = TRUE)
+```{r,warning = FALSE, message = FALSE}
+visualise.clusters(ppt,emb,clust.n = 5,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
 ```
+
 Alternatively, it is possible to provide a vector of gene clusters for visualization. Below we use hierarchical clustering with euclidean distance to cluster genes:
 ```{r}
 hc <- hclust(dist(ppt$fit.summary[genes.tree,]),method="ward.D") # hierarchical clustering
@@ -212,14 +210,14 @@ clust <- cutree(hc,6) # partition of genes in 4 clusters
 str(clust)
 ```
 And supply a vector `clust` for visualizzation:
-```{r}
-visualise.clusters(ppt,emb,clust=clust,n.best=6,best.method="pca",cex.gene=0.5,cex.cell=0.05,cex.tree=0.2,reclust = TRUE)
+```{r,warning = FALSE, message = FALSE}
+visualise.clusters(ppt,emb,clust=clust,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
 ```
 
 
 ## Analysis of subtree of interest
 
-In some cases a subtree of the tree, for example a single trajectory, is of particular interest. A set of routines select subtree, visualize gene patterns along the subtree and provide genes associated with the subtree. Below we choose a single trajectory:
+In some cases a subtree of the tree, for example a single trajectory, is of particular interest. A set of routines used to select subtree, visualize gene patterns along the subtree and provide genes associated with the subtree. Below we choose a single trajectory:
 ```{r,fig.width = 3, fig.height = 3}
 plotppt(ppt,emb[,],tips=TRUE,tree.col = ppt$pp.info$color,forks=TRUE,cex.tree = 1,lwd.tree = 0.1) # visualize tree tips
 zseg <- extract.subtree(ppt,c("465","283")) # select root and terminal leave of the trajectory
@@ -230,7 +228,7 @@ Explore at expression patterns of a gene along selected subtree, defined by `zse
 plotppt(ppt,emb,gene=gene,mat=fpm,cex.main=1,cex.tree = 1.5,lwd.tree = 0.1,subtree=zseg)
 ```
 
-```{r,fig.width = 6, fig.height = 6}
+```{r,fig.width = 3, fig.height = 3}
 visualise.trajectory(ppt,gene,fpm,cex.main = 3,subtree = zseg,lwd.t2=1)
 ```
 
@@ -275,15 +273,15 @@ knitr::kable(head(fork.de[order(fork.de$p),],))
 ## Selection of optimal tree parameters
 Choice of parameters `sigma` and `lambda` for tree reconstruction is of crucial importance. We suggest a combination of formal criteria and exploratory analysis for selection of parameters. First, parameter `sigma` is selected as an optimum of cross validation upon `lambda`=0:
 ```{r, warning = FALSE, message = FALSE}
-#sig <- sig.explore(X=wgm[,nc.cells],metrics="cosine",sig.lims=seq(0.01,0.1,0.01),plot=TRUE)
+sig <- sig.explore(X=wgm[,nc.cells],metrics="cosine",sig.lims=seq(0.01,0.1,0.01),plot=TRUE)
 ```
 
 Optimum sigma:
 ```{r}
-#sig
+sig
 ```
 
-Parameter `lambda` is selected upon optimal `sigma` using entropy criteria. However, the estimate is not fully robust. Using routine `lambda.explore` we additionally show trees for two intermediate `lambda` parameters and leave a final choice to the user:
+Parameter `lambda` is selected upon optimal `sigma` using entropy criteria. However, the estimate is not fully robust. Using routine `lambda.explore` we additionally show trees for two intermediate `lambda` parameters and leave a final choice or further exploration to the user:
 ```{r,warning = FALSE, message = FALSE,results="hide",fig.height=5,fig.width=5}
-#lambda.stat <- lambda.explore(X=wgm[,nc.cells],M=length(nc.cells),metrics="cosine",emb=emb,sigma=sig,base=2)
+lambda.stat <- lambda.explore(X=wgm[,nc.cells],M=length(nc.cells),metrics="cosine",emb=emb,sigma=sig,base=2)
 ```
