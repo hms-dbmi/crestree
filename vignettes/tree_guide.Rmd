@@ -109,13 +109,13 @@ plotppt(ppt,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 \n
 Optionally, stable properties of the tree can be assessed using sampling of cells. Below we generate 20 trees through subsampling of 90% of cells without replacement:  
 ```{r}
-ppt_ensemble <- bootstrap.ppt(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, metrics=metrics, M=as.integer(length(nc.cells)*0.9), lambda=lambda, sigma=sigma, plot=FALSE,
+#ppt_ensemble <- bootstrap.ppt(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, metrics=metrics, M=as.integer(length(nc.cells)*0.9), lambda=lambda, sigma=sigma, plot=FALSE,
                              n.samples=20,n.cores=20, seed=NULL,replace=FALSE)
 ```
 
 Sampling of trees can be visualized on embedding using routing `plotpptl`:
 ```{r,fig.width = 3, fig.height = 3}
-plotpptl(ppt_ensemble,emb, cols=adjustcolor("grey",alpha=0.1),alpha=0.05, lwd=1)
+#plotpptl(ppt_ensemble,emb, cols=adjustcolor("grey",alpha=0.1),alpha=0.05, lwd=1)
 ```
 
 ## Tree processing
@@ -126,9 +126,10 @@ While major stable branches reflect biologically strong signal, small spurious b
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
 
-Spurious branchs are removed using `cleanup.branches` routine, which suggests a number of criterion to eliminate undesired branches. Below we directly remove a branch leading to a tip `295`:
+Spurious branchs are removed using `cleanup.branches` routine, which suggests a number of criterion to eliminate undesired branches. Below we retain only `tips.number` tips of the tree that maximally preserve the tree structure (alternatively, we could directly supply a vector of tip ids `tips.remove` for removal):
 ```{r,fig.width = 3, fig.height = 3}
-ppt <- cleanup.branches(ppt,tips.remove = c(295))
+ppt <- cleanup.branches(ppt,tips.number = 5)
+
 ```
 Of note, after removing spurious branches, numeration of the remaining principal point changes:
 ```{r,fig.width = 3, fig.height = 3}

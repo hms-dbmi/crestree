@@ -440,56 +440,16 @@ plotpptl <- function(rl,emb, cols=adjustcolor(1,alpha=0.3),alpha=1, lwd =1, ...)
 ##' @param tips.number select and retain only fixed number of tips (tips.number) that explain the most cell-cell variation.
 ##' @param tips.remove vector of tips indices to remove
 ##' @param min.branch.length remove all branches with length less or equal than min.branch.length principal points
-##' @param min.dist.length remove all branches with length less or equal than min.dist.length principal points
 ##' @return modified ppt.tree object with cleaned up structure
 ##' @export
-cleanup.branches <- function(r,tips.number=NULL,tips.remove=NULL,min.branch.length=3,min.dist.length=NA) {
+cleanup.branches <- function(r,tips.number=NULL,tips.remove=NULL,min.branch.length=3) {
 
   if (!is.null(tips.remove)){
     if (sum(!tips.remove %in% r$tips) > 0) { stop("tips from tips.remove are not consistent with annotation of the tree tips") }
   }else{
     tips.remove <- c()
   }
-
-  #if (!is.null(min.branch.length)){
-  #  g <- graph.adjacency(r$B,mode="undirected")
-  #  leaves <- V(g)[degree(g)==1]
-  #  branches <- V(g)[degree(g)>2]
-  #  bd <-shortest.paths(g,v=leaves,to=branches)
-  #  tips.remove <- c(tips.remove,leaves[which( apply(bd,1,min) < min.branch.length)])
-  #}
-  if (!is.null(min.dist.length)){
-    if (r$metrics=="euclidean"){
-      d <- euclidean.mat(r$F,r$F)
-    }else if (r$metrics=="cosine"){
-      d <-  1-cor.mat(r$F,r$F)
-      d <- abs(d)
-    }
-    g <- graph.adjacency(r$B*d,mode="undirected",weighted = TRUE)
-    leaves <- V(g)[degree(g)==1]
-    branches <- V(g)[degree(g)>2]
-    bd <-shortest.paths(g,v=leaves,to=branches)
-    tips.remove <- c(tips.remove,leaves[which( apply(bd,1,min) < min.dist.length)] )
-  }
   tips.retain = as.numeric(setdiff(r$tips,(tips.remove)))
-  #print(paste("tips: ",leaves))
-  #print(paste("remove: ",tips.remove))
-  #print(paste("retain: ",tips.retain))
-
-  if (!is.null(tips.number)){
-    if (length(tips.remove)+tips.number > length(r$tips)) { stop("number of tips to remove is higher than the number of tips in the tree") }
-    g <- graph.adjacency(r$B,mode="undirected",weighted = TRUE)
-    x = unlist(lapply( 1:2^length(tips.retain),function(i){
-      base.bin = decompose(i)
-      if (length(base.bin)==tips.number){
-        tps <- as.numeric(tips.retain[base.bin+1])
-        bd <- get.shortest.paths(g,tps[1],to=tps[-1])
-        pps.sub <- unique(unlist(bd$vpath))
-        sum(r$R[,pps.sub])
-      }else{NA}
-    }))
-    tips.retain = tips.retain[decompose(which(x == max(x,na.rm=TRUE)))+1]
-  }
 
   g <- graph.adjacency(r$B,mode="undirected")
   bd <- get.shortest.paths(g,tips.retain[1],to=tips.retain[-1])
@@ -505,19 +465,23 @@ cleanup.branches <- function(r,tips.number=NULL,tips.remove=NULL,min.branch.leng
   r$DT <- r$DT[pps.sub,pps.sub];
   rownames(r$DT) <- colnames(r$DT) <- colnames(r$F) <- colnames(r$B) <- rownames(r$B) <- as.character(1:nrow(r$B));
 
-  if (!is.null(min.branch.length)){
+  if (!is.null(min.branch.length) | !is.null(tips.number)){
     small.branches <- TRUE
+    if ( !is.null(tips.number) &  (length(r$tips) <= tips.number) ){
+      small.branches <- FALSE
+    }
     while (small.branches==TRUE){
       # find a tip with length of <= min.branch.length
       g <- graph.adjacency(r$B,mode="undirected")
       leaves <- V(g)[degree(g)==1]
       branches <- V(g)[degree(g)>2]
       bd <-shortest.paths(g,v=leaves,to=branches)
-      if ( sum(apply(bd,1,min) < min.branch.length)==0 ) {
+      if ( (sum(apply(bd,1,min) < min.branch.length)==0) & (is.null(tips.number) | !is.null(tips.number) & length(leaves)<=tips.number) ) {
         small.branches=FALSE
       }else{
         # remove the tip from the tree
-        tip.remove <- leaves[which( apply(bd,1,min) < min.branch.length)][1]
+        tip.remove <- leaves[which.min(apply(bd,1,min))][1]
+        #tip.remove <- leaves[which( apply(bd,1,min) < min.branch.length)][1]
         tips.retain <- setdiff(leaves,tip.remove)
         bd <- get.shortest.paths(g,tips.retain[1],to=tips.retain[-1])
         pps.sub <- unique(unlist(bd$vpath))
