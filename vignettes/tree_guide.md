@@ -1,4 +1,15 @@
-# Analysis of branching trajectories
+---
+title: "Analysis of branching trajectories"
+#author: "Ruslan Soldatov"
+#date: "2019-04-17"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Analysis of branching trajectories}
+---
+
+
 
 This vignette describes tree reconstruction procedure and basic routines to explore gene expression patterns associated with the tree. It demonstrates application of the tree analysis to neural crest system. The guideline starts with processed data, including normalized gene expression matrix and t-SNE embedding, shows how to reconstruct the tree, analyse transcriptional events along the tree and provides a number of visualization routines. 
 
@@ -58,7 +69,7 @@ plot(crest$emb,col=crest$clcol,pch=ifelse( rownames(crest$emb)%in%crest$nc.cells
 legend("bottomright",c("neural crest","neural tube"),pch=c(19,1),cex=0.2)
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png)
+![plot of chunk unnamed-chunk-43](figure/unnamed-chunk-43-1.png)
 
 The data `crest` contains matrix of expression levels normalized to cell size `fpm` and expression levels adjusted for mean-variance trend `wgm`:
 
@@ -109,17 +120,19 @@ The reconstructed tree `z`, that is modeled in high-dimensional expression space
 plotppt(z,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png)
+![plot of chunk unnamed-chunk-48](figure/unnamed-chunk-48-1.png)
 
 We next switch to expression matrix `wgm` with weights `wgmw` used in the paper. Of note, optimal tree parameters `lambda` and `sigma` are sensitive to the data properties, such as dataset size or choice of expression matrices. In section **Selection of optimal tree parameters** we discuss a strategy of parameters selection and suggest two guiding routines. Below the tree is modeled and visualized with a new choice of expression matrices:
 
 ```r
 lambda <- 250 
 sigma <- 0.045
-#ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=lambda, sigma=sigma, metrics=metrics, M=M, err.cut = 5e-3, n.steps=50, seed=1, plot=FALSE)
+ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=lambda, sigma=sigma, metrics=metrics, M=M, err.cut = 5e-3, n.steps=50, seed=1, plot=FALSE)
 
-#plotppt(ppt,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
+plotppt(ppt,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 ```
+
+![plot of chunk unnamed-chunk-49](figure/unnamed-chunk-49-1.png)
 
 \n
 Optionally, stable properties of the tree can be assessed using sampling of cells. Below we generate 20 trees through subsampling of 90% of cells without replacement:  
@@ -141,161 +154,238 @@ Now we can prepare the tree for downstream analysis. For that, we will remove sm
 While major stable branches reflect biologically strong signal, small spurious branches likely reflect artifacts or incomplete convergence of the algorithm. Tips and forks of the tree can be explored on top of the embedding with flags `tips=TRUE` and `forks=TRUE` that show ids of principal points of tips and forks. For example, visually five leaves `(380, 178, 98, 99, 572)` correspond to notable branches, while leave `295` reflects spurious branch:
 
 ```r
-#plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
+plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
 
-Spurious branchs are removed using `cleanup.branches` routine, which suggests a number of criterion to eliminate undesired branches. Below we directly remove a branch leading to a tip `295`:
+![plot of chunk unnamed-chunk-52](figure/unnamed-chunk-52-1.png)
+
+Spurious branchs are removed using `cleanup.branches` routine, which suggests a number of criterion to eliminate undesired branches. Below we retain only `tips.number` tips of the tree that maximally preserve the tree structure (alternatively, we could directly supply a vector of tip ids `tips.remove` for removal):
 
 ```r
-#ppt <- cleanup.branches(ppt,tips.remove = c(295))
+ppt <- cleanup.branches(ppt,tips.number = 5)
 ```
 Of note, after removing spurious branches, numeration of the remaining principal point changes:
 
 ```r
-#plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
+plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
+
+![plot of chunk unnamed-chunk-54](figure/unnamed-chunk-54-1.png)
 
 The tree does not provide information about directionality of dynamics. Selection of a tree root with routine `setroot`  is sufficient to orient the tree:
 
 ```r
-#ppt <- setroot(ppt,root=465)
+ppt <- setroot(ppt,root=465)
 ```
 
 Finally, each cell is projected onto the tree. It provides estimates of a cell pseudotime and branch. Probabilistic position of a cell on the tree is naturally delivered by the method and stored in the field `R` of tree object. For example, probailistic distribution of a given cell on the tree is shown below:
 
 ```r
-#cell <- nc.cells[2] # choose a cell
-#pprobs <- ppt$R[cell,] # probabilities of tee projections
-#plotppt(ppt,emb,pattern.tree = ppt$R[cell,],cex.tree = 1,lwd.tree = 0.1) # plot probabilities using pattern.tree parameter
-#points(emb[cell,1],emb[cell,2],cex=1,pch=19,col="black") # show cell position on embedding
+cell <- nc.cells[2] # choose a cell
+pprobs <- ppt$R[cell,] # probabilities of tee projections
+plotppt(ppt,emb,pattern.tree = ppt$R[cell,],cex.tree = 1,lwd.tree = 0.1) # plot probabilities using pattern.tree parameter
+points(emb[cell,1],emb[cell,2],cex=1,pch=19,col="black") # show cell position on embedding
 ```
 
+![plot of chunk unnamed-chunk-56](figure/unnamed-chunk-56-1.png)
 
-We next use routine `project.cells.onto.ppt` to assign maximum likelihood projection of each cell on the tree and estimate cells pseudotime (if `emb` is supplied than the routine plots cells colored by branch position):
+
+We next use routine `project.cells.onto.ppt` to assign maximum likelihood projection of each cell on the tree and estimate cells pseudotime (if `emb` is supplied than the routine plots cells colored by branch position). To account for uncertainty in cell projections, we can sample `n.mapping` probabilistic mappings of cells onto the tree:
 
 ```r
-#ppt <- project.cells.onto.ppt(ppt,emb,n.mapping = 1)
+ppt <- project.cells.onto.ppt(ppt,emb,n.mapping = 10)
 ```
+
+![plot of chunk unnamed-chunk-57](figure/unnamed-chunk-57-1.png)
 
 
 ## Analysis of tree-associated genes
 We are ready to study gene expression patterns along the tree. The first step is to identify genes that have expression levels significantly varied along the tree (tree-associated genes). Routine `test.associated.genes` estimates significance of each gene's association with the tree using an input expression matrix, e.g. `fpm`:
 
 ```r
-#ppt <- test.associated.genes(ppt,n.map=1,n.cores = 20,fpm,summary=TRUE)
+ppt <- test.associated.genes(ppt,n.map=1,n.cores = 20,fpm,summary=TRUE)
 ```
 
-A field `stat.association` of `ppt` provides summary statistics of genes association, including amplitude of changes along the tree  `A`, p-value `pval`, B-H adjustment for multiple testing `fdr` and binary classification `sign` of differential expression along the tree:
+![plot of chunk unnamed-chunk-58](figure/unnamed-chunk-58-1.png)
+
+A field `stat.association` of `ppt` provides summary statistics of genes association, including amplitude of changes along the tree  `A`, p-value `pval`, B-H adjustment for multiple testing `fdr` and binary classification `sign` of differential expression along the tree. Also, robustness of differential expression is estimated as a fraction `st` of probabilistic projections (if `n.mappings` > 1 in project.cells.onto.ppt) when a gene was detected to be differentially expressed.
 
 ```r
-#head(ppt$stat.association[order(ppt$stat.association$pval),])
+head(ppt$stat.association[order(ppt$stat.association$pval),])
 ```
 
 
+|       | pval|        A| fdr| st|sign |
+|:------|----:|--------:|---:|--:|:----|
+|Wnt3a  |    0| 3.318896|   0|  1|TRUE |
+|Phox2b |    0| 3.060742|   0|  1|TRUE |
+|Prrx1  |    0| 3.363754|   0|  1|TRUE |
+|Sox10  |    0| 3.690971|   0|  1|TRUE |
+|Rspo3  |    0| 3.583673|   0|  1|TRUE |
+|Fli1   |    0| 2.429781|   0|  1|TRUE |
 
 Only differentially expressed genes (TRUE in `sign`) are later used to model expression patterns along the tree. A set of differentially expressed genes can be manually modified in a column `sign`. 
 Now expression levels of differentially expressed genes can be modeled as a function of pseudotime along the tree. 
 
 ```r
-#ppt <- fit.associated.genes(ppt,fpm,n.map=1,n.cores=20)
+ppt <- fit.associated.genes(ppt,fpm,n.map=1,n.cores=20)
+## [1] "fit gene expression for mapping 1"
+## 
+##     branch-monotonous      complex patterns transiently expressed 
+##                   385                    81                   203
 ```
 
 There are different ways to visualize expression trends of a gene along the tree. For example, as a function of pseudotime:
 
 ```r
-#gene <- "Neurog2"
-#visualise.trajectory(ppt,gene,fpm[gene,],cex.main = 3)
+gene <- "Neurog2"
+visualise.trajectory(ppt,gene,fpm[gene,],cex.main = 3,lwd.t2=0.5)
 ```
+
+![plot of chunk unnamed-chunk-62](figure/unnamed-chunk-62-1.png)
 
 The other way is to show how fitted expression levels `fit.summary` change along the tree on the embedding:
 
 ```r
-#par(mar=c(4,4,3,1))
-#plotppt(ppt,emb,pattern.cell = ppt$fit.summary[gene,],gene="Neurog2",cex.main=1,cex.tree = 1.0,lwd.tree = 0.1,par=FALSE)
+par(mar=c(4,4,3,1))
+plotppt(ppt,emb,pattern.cell = ppt$fit.summary[gene,],gene="Neurog2",cex.main=1,cex.tree = 1.0,lwd.tree = 0.1,par=FALSE)
 ```
+
+![plot of chunk unnamed-chunk-63](figure/unnamed-chunk-63-1.png)
 
 We can now use matrix of expression profiles `fit.summary` smoothed along the tree to cluster differentially expressed genes and explore major tree-associated patterns of expression. First, lets select a subset of genes that have large magnitude of variability along the tree:
 
 ```r
-#genes.tree <- rownames(ppt$stat.association)[ppt$stat.association$sign==TRUE & ppt$stat.association$A > 2]
+genes.tree <- rownames(ppt$stat.association)[ppt$stat.association$sign==TRUE & ppt$stat.association$A > 2]
 ```
 
 
 ```r
-#str(genes.tree)
+str(genes.tree)
+##  chr [1:270] "1700011H14Rik" "1700019D03Rik" "6330403K07Rik" ...
 ```
 Then smoothed expression profiles can be clustered using a variety of methods. Below we use hierarchical clustering with cosine-based similarity:
 
-```r
-#dst <- 1-cor(t(ppt$fit.summary[genes.tree,])) # cosine-based similarity measure
-#hc <- hclust(as.dist(dst),method="ward.D") # hierarchical clustering
-#clust <- cutree(hc,6) # partition of genes in 4 clusters
-```
-Clusters of genes can be explored using `visualise.clusters` visualization routine:
+
+Then smoothed expression profiles can be clustered using a variety of methods. Clusters of genes can be explored using `visualise.clusters` visualization routine, using as a default hierarchical clustering with Ward linkage and cosine-based similarity with predefined number of `clust.n` clusters:
 
 ```r
-#visualise.clusters(ppt,emb,clust,n.best=6,best.method="pca",cex.gene=0.5,cex.cell=0.05,cex.tree=0.2,reclust=FALSE)
+visualise.clusters(ppt,emb,clust.n = 5,n.best=6,best.method="pca",cex.gene=0.5,cex.cell=0.05,cex.tree=0.2,reclust = TRUE)
 ```
+
+![plot of chunk unnamed-chunk-66](figure/unnamed-chunk-66-1.png)
+Alternatively, it is possible to provide a vector of gene clusters for visualization. Below we use hierarchical clustering with euclidean distance to cluster genes:
+
+```r
+hc <- hclust(dist(ppt$fit.summary[genes.tree,]),method="ward.D") # hierarchical clustering
+clust <- cutree(hc,6) # partition of genes in 4 clusters
+
+str(clust)
+##  Named int [1:270] 1 2 1 2 1 3 4 3 5 5 ...
+##  - attr(*, "names")= chr [1:270] "1700011H14Rik" "1700019D03Rik" "6330403K07Rik" "8430427H17Rik" ...
+```
+And supply a vector `clust` for visualizzation:
+
+```r
+visualise.clusters(ppt,emb,clust=clust,n.best=6,best.method="pca",cex.gene=0.5,cex.cell=0.05,cex.tree=0.2,reclust = TRUE)
+## Warning in if (!is.na(clust) & sum(!names(clust) %in% rownames(r
+## $fit.summary)) > : the condition has length > 1 and only the first element
+## will be used
+## Warning in if (!is.na(clust)) {: the condition has length > 1 and only the
+## first element will be used
+## Warning in if (is.na(clust)) {: the condition has length > 1 and only the
+## first element will be used
+```
+
+![plot of chunk unnamed-chunk-68](figure/unnamed-chunk-68-1.png)
+
 
 ## Analysis of subtree of interest
 
 In some cases a subtree of the tree, for example a single trajectory, is of particular interest. A set of routines select subtree, visualize gene patterns along the subtree and provide genes associated with the subtree. Below we choose a single trajectory:
 
 ```r
-#plotppt(ppt,emb[,],tips=TRUE,tree.col = ppt$pp.info$color,forks=TRUE,cex.tree = 1,lwd.tree = 0.1) # visualize tree tips
-#zseg <- extract.subtree(ppt,c("465","283")) # select root and terminal leave of the trajectory
+plotppt(ppt,emb[,],tips=TRUE,tree.col = ppt$pp.info$color,forks=TRUE,cex.tree = 1,lwd.tree = 0.1) # visualize tree tips
+```
+
+![plot of chunk unnamed-chunk-69](figure/unnamed-chunk-69-1.png)
+
+```r
+zseg <- extract.subtree(ppt,c("465","283")) # select root and terminal leave of the trajectory
 ```
 
 Explore at expression patterns of a gene along selected subtree, defined by `zseg`, using additional parameter `subtree` with two visualization options:
 
 ```r
-#plotppt(ppt,emb,gene=gene,mat=fpm,cex.main=1,cex.tree = 1.5,lwd.tree = 0.1,subtree=zseg)
+plotppt(ppt,emb,gene=gene,mat=fpm,cex.main=1,cex.tree = 1.5,lwd.tree = 0.1,subtree=zseg)
 ```
+
+![plot of chunk unnamed-chunk-70](figure/unnamed-chunk-70-1.png)
 
 
 ```r
-#visualise.trajectory(ppt,gene,fpm,cex.main = 3,subtree = zseg)
+visualise.trajectory(ppt,gene,fpm,cex.main = 3,subtree = zseg,lwd.t2=1)
 ```
+
+![plot of chunk unnamed-chunk-71](figure/unnamed-chunk-71-1.png)
 
 We also can assess differential expression along the subtree:
 
 ```r
-#stat.subtree <- test.associated.genes(ppt,n.map=1,fpm,subtree = zseg)
+stat.subtree <- test.associated.genes(ppt,n.map=1,fpm,subtree = zseg)
 ```
 
 Resulting `stat.subtree` is a summary table of genes associated with the subtree:
 
 ```r
-#head(stat.subtree[order(stat.subtree$pval),])
+head(stat.subtree[order(stat.subtree$pval),])
 ```
 
 
+|         | pval|        A| fdr| st|sign |
+|:--------|----:|--------:|---:|--:|:----|
+|Ppp1r14a |    0| 2.476081|   0|  1|TRUE |
+|Wnt3a    |    0| 3.318896|   0|  1|TRUE |
+|Rspo3    |    0| 3.583673|   0|  1|TRUE |
+|Sox10    |    0| 3.690971|   0|  1|TRUE |
+|Cp       |    0| 3.116822|   0|  1|TRUE |
+|Tfap2b   |    0| 3.118808|   0|  1|TRUE |
 
 ## Analysis of bifurcation point
 A particularly interesting implication of the tree is analysis of bifurcation point. Usually, the first step of such analysis is infererence of genes that are differentially expressed between two post-bifurcaiton branches. Bifurcaiton point is formalized as a fork consisting of a root and two leaves. Below we select a root and two leaves:
 
 ```r
-#plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
+plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
+
+![plot of chunk unnamed-chunk-75](figure/unnamed-chunk-75-1.png)
 
 
 ```r
-#root <- 465
-#leaves <- c(283,195)
+root <- 465
+leaves <- c(283,195)
 ```
 
 A routine `test.fork.genes` performs inference of genes differentially expressed between post-bifurcation branches:
 
 ```r
-#fork.de <- test.fork.genes(ppt,fpm,root=root,leaves=leaves,n.cores=30)
+fork.de <- test.fork.genes(ppt,fpm,root=root,leaves=leaves,n.cores=30)
 ```
 A table `fork.de` contains summary statistics of fold change `effect` and p-value `p` of differential expression between branches:
 
 ```r
-#head(fork.de[order(fork.de$p),],)
+head(fork.de[order(fork.de$p),],)
 ```
 
 
+|         |     effect|  p|
+|:--------|----------:|--:|
+|Pou4f1   | -1.4169248|  0|
+|Neurog2  | -2.1616649|  0|
+|Srrm4    | -0.9621098|  0|
+|Eya2     | -1.1860802|  0|
+|Hsd11b2  |  1.6786621|  0|
+|Ppp1r14a | -1.0806300|  0|
 
 ## Selection of optimal tree parameters
 Choice of parameters `sigma` and `lambda` for tree reconstruction is of crucial importance. We suggest a combination of formal criteria and exploratory analysis for selection of parameters. First, parameter `sigma` is selected as an optimum of cross validation upon `lambda`=0:
@@ -315,6 +405,3 @@ Parameter `lambda` is selected upon optimal `sigma` using entropy criteria. Howe
 ```r
 #lambda.stat <- lambda.explore(X=wgm[,nc.cells],M=length(nc.cells),metrics="cosine",emb=emb,sigma=sig,base=2)
 ```
-
-
-
