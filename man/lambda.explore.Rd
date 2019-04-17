@@ -5,7 +5,7 @@
 \title{Explore lambda}
 \usage{
 lambda.explore(X = NA, M = ncol(X), sigma = 0.1, emb = NA,
-  metrics = "cosine", tips.min = 2, tips.max = 20, base = 2,
+  metrics = "cosine", tips.min = 2, tips.max = 10, base = 2,
   lambda.init = 100, err.cut = 0.005, n.steps = 40, p.power = 1)
 }
 \arguments{

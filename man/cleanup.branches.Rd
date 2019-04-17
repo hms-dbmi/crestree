@@ -5,7 +5,7 @@
 \title{Remove spurious branches of pptree}
 \usage{
 cleanup.branches(r, tips.number = NULL, tips.remove = NULL,
-  min.branch.length = 3, min.dist.length = NA)
+  min.branch.length = 3)
 }
 \arguments{
 \item{r}{ppt.tree result}
@@ -15,8 +15,6 @@ cleanup.branches(r, tips.number = NULL, tips.remove = NULL,
 \item{tips.remove}{vector of tips indices to remove}
 
 \item{min.branch.length}{remove all branches with length less or equal than min.branch.length principal points}
-
-\item{min.dist.length}{remove all branches with length less or equal than min.dist.length principal points}
 }
 \value{
 modified ppt.tree object with cleaned up structure

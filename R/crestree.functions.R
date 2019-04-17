@@ -253,7 +253,7 @@ sig.explore <- function(X,W=NA,M=as.integer(ncol(X)/2),n.sample=1,sig.lims=seq(0
 ##' @param sigma fixed parameter sigma used in pptree modeling
 ##' @param emb embdedding to visalize cells and principal tree together. If emb is given than pptrees for a range of lambda are shown
 ##' @export
-lambda.explore <- function(X=NA,M=ncol(X),sigma=0.1,emb=NA,metrics="cosine",tips.min=2,tips.max=20,base=2,lambda.init=100,err.cut=5e-3,n.steps=40,p.power=1){
+lambda.explore <- function(X=NA,M=ncol(X),sigma=0.1,emb=NA,metrics="cosine",tips.min=2,tips.max=10,base=2,lambda.init=100,err.cut=5e-3,n.steps=40,p.power=1){
   if (is.na(X)) {stop("matrix X should be specified")}
   if (is.na(M)) {stop("number of principal points M should be specified")}
   cells <- colnames(X)
@@ -301,7 +301,7 @@ lambda.explore <- function(X=NA,M=ncol(X),sigma=0.1,emb=NA,metrics="cosine",tips
   if (!is.na(emb)){
     par(mfrow=c(2,2))
     par(mar=c(5,5,1,1))
-    plot( lambda.info[,1], ent.per.tip,lty=2,lwd=2,type="l",xlab="lambda",ylab="entropy per tip",cex.lab=1.5)
+    plot( lambda.info[,1], ent.per.tip,log="x",lty=2,lwd=2,type="l",xlab="lambda",ylab="entropy per tip",cex.lab=1.5)
     points(lambda.info[,1], ent.per.tip,pch=19,cex=1)
     abline(v=lambda.info[i.opt,1],col="red",lty=2)
     par(mar=rep(1,4))
