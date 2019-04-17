@@ -113,7 +113,7 @@ ppt_ensemble <- bootstrap.ppt(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, metr
 ```
 
 Sampling of trees can be visualized on embedding using routing `plotpptl`:
-```{r,fig.width = 3, fig.height = 3}
+```{r, warning = FALSE, message = FALSE,fig.width = 3, fig.height = 3}
 plotpptl(ppt_ensemble,emb, cols=adjustcolor("grey",alpha=0.1),alpha=0.05, lwd=1)
 ```
 
