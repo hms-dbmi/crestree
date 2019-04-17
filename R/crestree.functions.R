@@ -1011,7 +1011,7 @@ visualise.trajectory = function(r,gene,X,cex.cell=0.3,cex.lab=2,cex.axis=1.5,cex
   }
   # connect boundary cells from different branches
   g <- r$img.list[[1]]
-  for (seg in unique(r$cell.summary$seg)){
+  for (seg in segs){
 
     ind <- r$cell.summary$seg==seg
     c2.name <- rownames(r$cell.summary[ind,])[which.min(r$cell.summary$t[ind])]
@@ -1045,18 +1045,29 @@ visualise.trajectory = function(r,gene,X,cex.cell=0.3,cex.lab=2,cex.axis=1.5,cex
 ##' @param reclust whether to reorder cells inside individual clusters on heatmap according to hierarchical clustering using Ward linkage and 1-Pearson as a distance between genes. By default is FALSE.
 ##' @param subtree visualize clusters for a given subtree
 ##' @export
-visualise.clusters <-function(r,emb,clust,n.best=4,best.method="cor",cex.gene=1,cex.cell=0.1,cex.tree=2,reclust=FALSE,subtree=NA){
+visualise.clusters <-function(r,emb,clust=NA,clust.n=5,n.best=4,best.method="cor",cex.gene=1,cex.cell=0.1,cex.tree=2,subtree=NA, reclust=FALSE){
 
 
-  if ( sum(!names(clust)%in%rownames(r$fit.summary))>0) {stop( paste("Expression is not fitted for",sum(!names(clust)%in%rownames(r$fit.summary)),"gene" ))}
+  if ( !is.na(clust) & sum(!names(clust)%in%rownames(r$fit.summary))>0) {stop( paste("Expression is not fitted for",sum(!names(clust)%in%rownames(r$fit.summary)),"genes" ))}
   if (best.method!="pca" & best.method!="cor") {stop(paste("incorrect best.method option",best.method) )}
   tseg <- unlist(lapply( unique(r$cell.summary$seg),function(seg)mean(r$cell.summary$t[r$cell.summary$seg==seg]))); names(tseg) <-  unique(r$cell.summary$seg)
   tseg <- tseg[as.character(r$cell.summary$seg)]
 
-  emat <- r$fit.summary[names(clust),rownames(r$cell.summary)][,order(tseg,r$cell.summary$t)]
+  gns <- rownames(ppt$fit.summary)
+  if (!is.na(clust)){gns <- names(clust)}
+  emat <- r$fit.summary[gns,rownames(r$cell.summary)][,order(tseg,r$cell.summary$t)]
   emat <- t(apply(emat,1,function(x) (x-mean(x))/sd(x) ))
   cols <- r$cell.summary$col[order(tseg,r$cell.summary$t)]
   subcells = TRUE; if (!is.na(subtree)){subcells <- r$cell.summary$seg[order(tseg,r$cell.summary$t)]%in%subtree$seg}
+
+  # cluster genes if necessary
+  if (is.na(clust)){
+    gns <- rownames(emat)#names(clust)[clust==cln]
+    dst.cor <- 1-cor(t(emat[gns,]))
+    hcl <- hclust(as.dist(dst.cor),method="ward.D")
+    clust <- cutree(hcl,clust.n)
+  }
+
   k <- length(unique(clust))
   genes.show <- unlist(lapply(1:k,function(i){
     n <- n.best; if ( sum(clust==i) < n) {n <- sum(clust==i)}
@@ -1074,6 +1085,14 @@ visualise.clusters <-function(r,emb,clust,n.best=4,best.method="cor",cex.gene=1,
   nf <- layout( matrix(unlist(lapply(1:k,function(i) 5*(i-1)+c(1,2,3,1,4,5))),2*k,3, byrow=T),respect = T,width=c(1,1,0.1),heights=rep(c(0.1,1),k) )
   #layout.show(nf)
   for (cln in 1:k){
+    # recluster genes inside module if necessary
+    gns <- names(clust)[clust==cln]
+    if (reclust==TRUE){
+      dst.cor <- 1-cor(t(emat[gns,]))
+      hclust.cor <- hclust(as.dist(dst.cor),method="ward.D")
+      gns <- gns[hclust.cor$order]
+    }
+
     # draw cluster-wise pattern
     par(mar=c(0.3,0.1,0.0,0.2))
     plotppt(r,emb,pattern.cell = apply(emat[clust==cln,],2,mean),cex.main=cex.cell,cex.tree = cex.tree,lwd.tree = 0.1,subtree=subtree)
@@ -1086,14 +1105,6 @@ visualise.clusters <-function(r,emb,clust,n.best=4,best.method="cor",cex.gene=1,
 
     par(mar=c(0.0,0.0,0.0,0))
     plot(0.2,0.2,ylim=c(0.05,0.95),xlim=c(0,1),xaxt='n',yaxt='n',pch='',ylab='',xlab='',bty='n')
-
-    # recluster genes if necessary
-    gns <- names(clust)[clust==cln]
-    if (reclust==TRUE){
-      dst.cor <- 1-cor(t(emat[gns,]))
-      hclust.cor <- hclust(as.dist(dst.cor),method="ward.D")
-      gns <- gns[hclust.cor$order]
-    }
 
     #par(mar=c(0.2,0.2,0.0,2))
     par(mar=c(0.3,0.0,0.0,0))
@@ -1159,46 +1170,6 @@ test.fork.genes <- function(r,mat,matw=NULL,root,leaves,genes=rownames(mat),n.co
   colnames(gtl) = c("effect","p"); rownames(gtl) = genes; gtl = as.data.frame(gtl)
   return(gtl);
 }
-
-
-
-# construct consensus trajectory either by using principle points (type="PP") or by using cells (type="cell")
-t.consensus.trajectory = function(genes,z.ensemble,type="PP"){
-
-  gene.info = do.call(rbind,lapply(1:length(z.ensemble),function(i){
-    r = z.ensemble[[i]];rownames(r$fitting$pp.fitted) =  rownames(r$fitting$expr.fitted)
-    #data.frame(cbind(r$cell.pseudotime,expr=r$fitting$expr.fitted[genes,names(r$cells)[r$cells]][r$cell.pseudotime$cell]),tree=i)
-    data.frame(cbind(r$cell.pseudotime),tree=i)
-  }))
-
-  gene.info.consensus = cbind(aggregate(gene.info[,"time"],by=list(gene.info$cell), mean ),
-                              aggregate(gene.info[,"time"],by=list(gene.info$cell), sd )[-1],
-                              aggregate(gene.info[,c("seg")],by=list(gene.info$cell), FUN = function(x) names(sort(table(x),decreasing=TRUE))[1] )[-1],
-                              aggregate(gene.info[,c("color")],by=list(gene.info$cell), FUN = function(x) names(sort(table(x),decreasing=TRUE))[1] )[-1],
-                              aggregate(gene.info[,c("color")],by=list(gene.info$cell), FUN = function(x) sort(table(x),decreasing=TRUE)[1] )[-1]  )
-  names(gene.info.consensus) = c("PP","time","time_sd","seg","color","fraction")
-  gene.info.consensus$seg = as.numeric(gene.info.consensus$seg)
-  gene.info.matrix = matrix(0,nrow(z.ensemble[[1]]$fitting$expr.fitted),ncol(z.ensemble[[1]]$fitting$expr.fitted))
-  for (i in 1:length(z.ensemble)){
-    gene.info.matrix = gene.info.matrix + z.ensemble[[i]]$fitting$expr.fitted[,names(z.ensemble[[i]]$cells)[z.ensemble[[i]]$cells]]#[z.ensemble[[i]]$cell.pseudotime$cell]]
-  }
-  gene.info.matrix = gene.info.matrix / length(z.ensemble)
-
-
-  PPinfo = z.ensemble[[1]]$PPinfo
-  PPmatrix = matrix( 0,nrow(z.ensemble[[1]]$fitting$pp.fitted),ncol(z.ensemble[[1]]$fitting$pp.fitted)  )
-  rownames(PPmatrix) = rownames(z.ensemble[[1]]$fitting$pp.fitted)
-  for (i in 1:length(z.ensemble)){
-    PPmatrix = PPmatrix + z.ensemble[[i]]$fitting$pp.fitted
-  }
-  PPmatrix = PPmatrix / length(z.ensemble)
-
-  if (type=="PP")
-    list(info = PPinfo, expr = PPmatrix)
-  else if (type=="cell")
-    list(info = gene.info.consensus, expr = gene.info.matrix)
-}
-
 
 
 ##' Extract subtree of the tree
