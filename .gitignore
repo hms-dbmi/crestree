@@ -29,3 +29,4 @@ doc
 *.app
 .Rproj.user
 .Rhistory
+inst/doc

@@ -28,7 +28,7 @@ library(pcaMethods)
 library(Rcpp) 
 library(inline) 
 library(RcppArmadillo) 
-library(Rfast)
+#library(Rfast)
 
 library(crestree)
 ```
@@ -74,7 +74,14 @@ str(wgm)
 
 wgwm <- crest$wgwm # matrix of expression weights
 ```
-Of note, matrices contain only 1169 the most over-dispersed genes. 
+Of note, matrices contain only 1169 the most over-dispersed genes. Alternatively, we can upload the full matrix from a web server:
+```{r}
+fpm <- read.table("http://pklab.med.harvard.edu/ruslan/neural_crest/fpm.txt",header=TRUE)
+fpm <- as.matrix(fpm)
+
+str(fpm)
+```
+
 
 ## Running tree reconstruction
 Algorithm has a number of important parameters to be selected (they can be defined by default, but it is good to have control over them), in particular cell-cell distance `metrics` (cosine-based or euclidean), number of tree principal points (PPs) `M` and tree parameters `lambda` (stringency of the tree) and `sigma` (fuzziness of cells to principal points assignment):
@@ -88,7 +95,7 @@ Now we can model a parsimonious tree using `fpm` experssion matrix:
 lambda <- 150
 sigma <- 0.015
 
-z <- ppt.tree(X=fpm[,nc.cells], emb=emb, lambda=lambda, sigma=sigma, metrics=metrics, M=M, err.cut = 5e-3, n.steps=50, seed=1, plot=FALSE)
+z <- ppt.tree(X=fpm[rownames(wgm),nc.cells], emb=emb, lambda=lambda, sigma=sigma, metrics=metrics, M=M, err.cut = 5e-3, n.steps=50, seed=1, plot=FALSE)
 ```
 
 The reconstructed tree `z`, that is modeled in high-dimensional expression space, can be visualized on top of embedding `emb` using `plotppt` routine:
@@ -98,9 +105,10 @@ plotppt(z,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 
 We next switch to expression matrix `wgm` with weights `wgmw` used in the paper. Of note, optimal tree parameters `lambda` and `sigma` are sensitive to the data properties, such as dataset size or choice of expression matrices. In section **"Selection of optimal tree parameters"** we discuss a strategy of parameters selection and suggest two guiding routines. Below the tree is modeled and visualized with a new choice of expression matrices:
 ```{r, warning = FALSE, message = FALSE, results = "hide",fig.width = 3, fig.height = 3}
-lambda <- 250 
-sigma <- 0.045
-ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=lambda, sigma=sigma, metrics=metrics, M=M, err.cut = 5e-3, n.steps=50, seed=1, plot=FALSE)
+lambda <- 250
+sigma <- 0.04
+ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=250, sigma=0.04, metrics="cosine", M=M,
+                err.cut = 5e-3, n.steps=30, seed=1, plot=FALSE)
 
 plotppt(ppt,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 ```
@@ -127,8 +135,8 @@ plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 
 Spurious branchs are removed using `cleanup.branches` routine, which suggests a number of criterion to eliminate undesired branches. Below we retain only `tips.number` tips of the tree that maximally preserve the tree structure (alternatively, we could directly supply a vector of tip ids `tips.remove` for removal):
 ```{r,fig.width = 3, fig.height = 3}
-ppt <- cleanup.branches(ppt,tips.number = 5)
-
+#ppt <- t.cleanup.branches.new(ppt,tips.number = 5)
+ppt <- cleanup.branches(ppt,tips.remove = c(139,295))
 ```
 Of note, after removing spurious branches, numeration of the remaining principal point changes:
 ```{r,fig.width = 3, fig.height = 3}
@@ -137,7 +145,7 @@ plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 
 The tree does not provide information about directionality of dynamics. Selection of a tree root with routine `setroot`  is sufficient to orient the tree:
 ```{r}
-ppt <- setroot(ppt,root=465)
+ppt <- setroot(ppt,root=355)
 ```
 
 Finally, each cell is projected onto the tree. It provides estimates of a cell pseudotime and branch. Probabilistic position of a cell on the tree is naturally delivered by the method and stored in the field `R` of tree object. For example, probailistic distribution of a given cell on the tree is shown below:
@@ -151,7 +159,7 @@ points(emb[cell,1],emb[cell,2],cex=1,pch=19,col="black") # show cell position on
 
 We next use routine `project.cells.onto.ppt` to assign maximum likelihood projection of each cell on the tree and estimate cells pseudotime (if `emb` is supplied than the routine plots cells colored by branch position). To account for uncertainty in cell projections, we can sample `n.mapping` probabilistic mappings of cells onto the tree:
 ```{r,warning = FALSE, message = FALSE,results = "hide",fig.width = 3, fig.height = 3}
-ppt <- project.cells.onto.ppt(ppt,emb,n.mapping = 10)
+ppt <- project.cells.onto.ppt(ppt,emb,n.mapping = 100)
 ```
 
 
@@ -170,7 +178,15 @@ head(ppt$stat.association[order(ppt$stat.association$pval),])
 knitr::kable(head(ppt$stat.association[order(ppt$stat.association$pval),]))
 ```
 
-Only differentially expressed genes (TRUE in `sign`) are later used to model expression patterns along the tree. A set of differentially expressed genes can be manually modified in a column `sign`. 
+Only differentially expressed genes (TRUE in `sign`) are later used to model expression patterns along the tree. A set of differentially expressed genes can be manually modified in a column `sign`. In the original paper, differentially expressed genes (vector `genes.tree` in crest data) were estimated based on 100 probabilistic cell mappings, here we define only them as significant (to avoid time-consuming calculations):
+```{r, echo=FALSE, results='asis'}
+genes.tree <- crest$genes.tree
+
+ppt$stat.association$sign <- FALSE
+
+ppt$stat.association[genes.tree,]$sign <- TRUE
+```
+
 Now expression levels of differentially expressed genes can be modeled as a function of pseudotime along the tree. 
 ```{r,warning = FALSE, message = FALSE}
 ppt <- fit.associated.genes(ppt,fpm,n.map=1,n.cores=20)
@@ -190,11 +206,11 @@ plotppt(ppt,emb,pattern.cell = ppt$fit.summary[gene,],gene="Neurog2",cex.main=1,
 
 We can now use matrix of expression profiles `fit.summary` smoothed along the tree to cluster differentially expressed genes and explore major tree-associated patterns of expression. First, lets select a subset of genes that have large magnitude of variability along the tree:
 ```{r}
-genes.tree <- rownames(ppt$stat.association)[ppt$stat.association$sign==TRUE & ppt$stat.association$A > 2]
+genes <- rownames(ppt$stat.association)[ppt$stat.association$sign==TRUE & ppt$stat.association$A > 2]
 ```
 
 ```{r}
-str(genes.tree)
+str(genes)
 ```
 
 Then smoothed expression profiles can be clustered using a variety of methods. Clusters of genes can be explored using `visualise.clusters` visualization routine, using as a default hierarchical clustering with Ward linkage and cosine-based similarity with predefined number of `clust.n` clusters:
@@ -220,7 +236,7 @@ visualise.clusters(ppt,emb,clust=clust,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
 In some cases a subtree of the tree, for example a single trajectory, is of particular interest. A set of routines used to select subtree, visualize gene patterns along the subtree and provide genes associated with the subtree. Below we choose a single trajectory:
 ```{r,fig.width = 3, fig.height = 3}
 plotppt(ppt,emb[,],tips=TRUE,tree.col = ppt$pp.info$color,forks=TRUE,cex.tree = 1,lwd.tree = 0.1) # visualize tree tips
-zseg <- extract.subtree(ppt,c("465","283")) # select root and terminal leave of the trajectory
+zseg <- extract.subtree(ppt,c("355","165")) # select root and terminal leave of the trajectory
 ```
 
 Explore at expression patterns of a gene along selected subtree, defined by `zseg`, using additional parameter `subtree` with two visualization options:
@@ -253,15 +269,16 @@ plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
 
 ```{r}
-root <- 465
-leaves <- c(283,195)
+root <- 355
+leaves <- c(165,91)
 ```
 
-A routine `test.fork.genes` performs inference of genes differentially expressed between post-bifurcation branches:
+A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
 ```{r}
-fork.de <- test.fork.genes(ppt,fpm,root=root,leaves=leaves,n.cores=30)
+fork.de <- test.fork.genes(ppt,fpm[,],root=root,leaves=leaves,n.mapping = 1,n.cores=30)
 ```
-A table `fork.de` contains summary statistics of fold change `effect` and p-value `p` of differential expression between branches:
+
+A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` and p-value `pd1.p` of expression changes from derivative branch 1 to progenitor branch:
 ```{r, results='hide'}
 head(fork.de[order(fork.de$p),],)
 ```
@@ -269,6 +286,8 @@ head(fork.de[order(fork.de$p),],)
 ```{r, echo=FALSE, results='asis'}
 knitr::kable(head(fork.de[order(fork.de$p),],))
 ```
+
+Detailed analysis of bifurcation point is described in https://github.com/hms-dbmi/crestree/blob/master/vignettes/bifurcation_point.md
 
 ## Selection of optimal tree parameters
 Choice of parameters `sigma` and `lambda` for tree reconstruction is of crucial importance. We suggest a combination of formal criteria and exploratory analysis for selection of parameters. First, parameter `sigma` is selected as an optimum of cross validation upon `lambda`=0:

@@ -136,8 +136,8 @@ ppt.tree <- function(X,W=NA,emb=NA,M,init=NULL,plot=TRUE,output=TRUE,lambda=1e1,
         cordist <- (1-cor.mat(F.mat,X))^p.power
       }else{
         cordist <- do.call(cbind,lapply(1:ncol(X),function(i) {
-            (1-matWVCorr(F.mat,X[,i],W[,i]))^p.power
-            #(1-wcr(F.mat,X[,i],W[,i]))^p.power
+          (1-matWVCorr(F.mat,X[,i],W[,i]))^p.power
+          #(1-wcr(F.mat,X[,i],W[,i]))^p.power
         }))
         colnames(cordist) <- colnames(X)
       }
@@ -270,7 +270,7 @@ lambda.explore <- function(X=NA,M=ncol(X),sigma=0.1,emb=NA,metrics="cosine",tips
     tips <- length(tr$tips);
     len <- sum(tr$pp.segments$d)
     entropy.ind <- sum(tr$pp.segments$d*log(tr$pp.segments$d))
-     # add entry to the lambda.info matrix
+    # add entry to the lambda.info matrix
     if (lambda == lambda.init){
       lambda.info <- matrix(c(lambda=lambda,tips=tips,length=len,entropy=entropy.ind),nrow=1,ncol=4)
       #tr.list[[as.character(lambda)]] <- tr
@@ -336,9 +336,9 @@ lambda.explore <- function(X=NA,M=ncol(X),sigma=0.1,emb=NA,metrics="cosine",tips
 ##' @param tips - logical, to draw indecies of tips of the tree. Usefull before usage of cleanup.branches()
 ##' @export
 plotppt <- function(r,emb,F=NULL, gene=NULL, main=gene, mat=NULL, pattern.cell=NULL, pattern.tree=NULL,
-                       cex.col=NA, tree.col = NULL,
-                       cex.main=0.5, cex.title=1,
-                       cex.tree=1.5,lwd.tree=1,par=TRUE,tips=FALSE,forks=FALSE,subtree=NA,...) {
+                    cex.col=NA, tree.col = NULL,
+                    cex.main=0.5, cex.title=1,
+                    cex.tree=1.5,lwd.tree=1,par=TRUE,tips=FALSE,forks=FALSE,subtree=NA,...) {
   if ( sum(!rownames(r$R)%in%rownames(emb))>0 ) { stop("cell names used for tree reconstruction are not consistent with row names of embedding (emb)") }
   if (sum(!is.na(cex.col))==0 ) {cex.col=rep("grey70",nrow(emb)); names(cex.col) <- rownames(emb)}
   vi = rownames(emb)%in%rownames(r$R); names(vi) <- rownames(emb)
@@ -442,60 +442,39 @@ plotpptl <- function(rl,emb, cols=adjustcolor(1,alpha=0.3),alpha=1, lwd =1, ...)
 ##' @param min.branch.length remove all branches with length less or equal than min.branch.length principal points
 ##' @return modified ppt.tree object with cleaned up structure
 ##' @export
-cleanup.branches <- function(r,tips.number=NULL,tips.remove=NULL,min.branch.length=3) {
-
-  if (!is.null(tips.remove)){
-    if (sum(!tips.remove %in% r$tips) > 0) { stop("tips from tips.remove are not consistent with annotation of the tree tips") }
-  }else{
-    tips.remove <- c()
-  }
-  tips.retain = as.numeric(setdiff(r$tips,(tips.remove)))
-
-  g <- graph.adjacency(r$B,mode="undirected")
-  bd <- get.shortest.paths(g,tips.retain[1],to=tips.retain[-1])
-  pps.sub <- unique(unlist(bd$vpath))
-  # remove from the graph (B)
-  r$B <- r$B[pps.sub,pps.sub]
-  # remove from F
-  r$F <- r$F[,pps.sub];
-  # remove from R and renormalize
-  r$R <- r$R[,pps.sub];
-  r$R <- r$R/rowSums(r$R); #r$R[is.na(r$R)|is.nan(r$R)] <- 0
-  # remove from DT
-  r$DT <- r$DT[pps.sub,pps.sub];
-  rownames(r$DT) <- colnames(r$DT) <- colnames(r$F) <- colnames(r$B) <- rownames(r$B) <- as.character(1:nrow(r$B));
-
-  if (!is.null(min.branch.length) | !is.null(tips.number)){
-    small.branches <- TRUE
-    if ( !is.null(tips.number) &  (length(r$tips) <= tips.number) ){
-      small.branches <- FALSE
+cleanup.branches <- function(r,tips.remove=NULL,min.branch.length=3) {
+  #colnames(r$F) <- NULL; colnames(r$B) <- rownames(r$B) <- NULL;
+  repeat {
+    g <- graph.adjacency(r$B>0,mode="undirected")
+    leaves <- V(g)[degree(g)==1]
+    branches <- V(g)[degree(g)>2]
+    bd <-shortest.paths(g,v=leaves,to=branches)
+    ivi <- which(apply(bd,1,min)<=min.branch.length)
+    ivi <- unique( c(ivi, which( leaves %in% tips.remove) ) )
+    if(length(ivi)==0) { break }
+    toremove <- c();
+    for(x in ivi) {
+      bdp <- get.shortest.paths(g,leaves[x],to=branches[which.min(bd[x,])])
+      toremove <- c(toremove,bdp$vpath[[1]][-length(bdp$vpath[[1]])])
     }
-    while (small.branches==TRUE){
-      # find a tip with length of <= min.branch.length
-      g <- graph.adjacency(r$B,mode="undirected")
-      leaves <- V(g)[degree(g)==1]
-      branches <- V(g)[degree(g)>2]
-      bd <-shortest.paths(g,v=leaves,to=branches)
-      if ( (sum(apply(bd,1,min) < min.branch.length)==0) & (is.null(tips.number) | !is.null(tips.number) & length(leaves)<=tips.number) ) {
-        small.branches=FALSE
-      }else{
-        # remove the tip from the tree
-        tip.remove <- leaves[which.min(apply(bd,1,min))][1]
-        #tip.remove <- leaves[which( apply(bd,1,min) < min.branch.length)][1]
-        tips.retain <- setdiff(leaves,tip.remove)
-        bd <- get.shortest.paths(g,tips.retain[1],to=tips.retain[-1])
-        pps.sub <- unique(unlist(bd$vpath))
-        r$B <- r$B[pps.sub,pps.sub]; r$F <- r$F[,pps.sub];r$R <- r$R[,pps.sub];
-        #r$R <- r$R/rowSums(r$R); r$R[is.na(r$R)|is.nan(r$R)] <- 0
-      }
-    }
-  }
 
+    # remove from the graph (B)
+    r$B <- r$B[-toremove,-toremove]
+    # remove from F
+    r$F <- r$F[,-toremove];
+    # remove from lRu
+    r$lRu <- r$lRu[,-toremove]
+    # remove from R and renormalize
+    r$R <- r$R[,-toremove];
+    r$R <- r$R/rowSums(r$R);
+  }
   colnames(r$F) <- colnames(r$B) <- rownames(r$B) <- as.character(1:nrow(r$B));
-  g = graph.adjacency(r$B,mode="undirected"); r$tips = V(g)[degree(g)==1];r$forks = V(g)[degree(g)>2]
+
+  g = graph.adjacency(r$B,mode="undirected");r$tips = V(g)[degree(g)==1];r$forks = V(g)[degree(g)>2]
 
   r
 }
+
 
 ##' Orient the tree by setting up the root
 ##'
@@ -573,6 +552,7 @@ project.cells.onto.ppt <- function(r,emb=NULL,n.mapping=1) {
         nvd <- shortest.paths(g,v,nv)
         spi <- apply(r$R[vcells,nv[-1],drop=FALSE],1,which.max)+1
         ndf <- data.frame(cell=vcells,v0=v,v1=nv[spi],d=nvd[spi])
+
         p0 <- r$R[vcells,v]
         p1 <- unlist(lapply(1:length(vcells),function(i) r$R[vcells[i],ndf$v1[i]] ))
         alpha <- runif(length(vcells))
@@ -580,6 +560,7 @@ project.cells.onto.ppt <- function(r,emb=NULL,n.mapping=1) {
         ndf$t <- r$pp.info[ndf$v0,]$time+(r$pp.info[ndf$v1,]$time-r$pp.info[ndf$v0,]$time)*alpha
         ndf$seg <- r$pp.info[ndf$v0,]$seg
         ndf$color <- r$pp.info[ndf$v0,]$color
+
         ndf
       } else {
         return(NULL);
@@ -587,7 +568,15 @@ project.cells.onto.ppt <- function(r,emb=NULL,n.mapping=1) {
     }))
     df$edge <- apply(df,1,function(x) paste(sort(as.numeric(x[c(2,3)])),collapse="|"))
     df <- df[order(df$t,decreasing=FALSE),]
-    # make graph from cells and PPs
+
+    ### assign data from ndf table of z.ensemble1
+    #ndf <- z.ensemble1[[nm]]$ndf[,1:5]
+    #ndf[,6:8] <-  z.ensemble1[[nm]]$cell.pseudotime[match(z.ensemble1[[nm]]$ndf$cell,z.ensemble1[[nm]]$cell.pseudotime$cell),2:4]
+    #colnames(ndf)[6] <- "t"
+    #rownames(ndf) <- nc.cells[ndf$cell]
+    #df <- ndf
+    #df <- df[order(df$t,decreasing=FALSE),]
+
     return(df)
   })
 
@@ -646,9 +635,10 @@ project.cells.onto.ppt <- function(r,emb=NULL,n.mapping=1) {
 ##' @param st.cut cutoff on stability (fraction of mappings with significant (fdr,A) pair) of association; significance, significance if A > A.cut
 ##' @param summary show plot of amplitude vs FDR of each gene's association. By default FALSE.
 ##' @param subtree restrict statistical assesment to a subtree
+##' @param fdr.method a method to adjust for multiple testing. Default - Bonferroni. Alternatively, "BH" can be used.
 ##' @return modified pptree object with a new field r$stat.association that includes pvalue, amplitude, fdr, stability and siginificane (TRUE/FALSE) of gene associations
 ##' @export
-test.associated.genes <- function(r,X,n.map=1,n.cores=20,spline.df=3,fdr.cut=1e-4,A.cut=1,st.cut=0.8,summary=FALSE,subtree=NA, ...) {
+test.associated.genes <- function(r,X,n.map=1,n.cores=20,spline.df=3,fdr.cut=1e-4,A.cut=1,st.cut=0.8,summary=FALSE,subtree=NA,fdr.method=NULL, ...) {
   if (is.null(r$root)) {stop("assign root first")}
   if (is.null(r$cell.summary) | is.null(r$cell.info)) {stop("project cells onto the tree first")}
   X <- X[,intersect(colnames(X),rownames(r$cell.summary))]
@@ -687,7 +677,11 @@ test.associated.genes <- function(r,X,n.map=1,n.cores=20,spline.df=3,fdr.cut=1e-
       return(c(pval=pval,A=max(pr)-min(pr)))
     },mc.cores=n.cores,mc.preschedule=T))
     gt <- data.frame(gt); rownames(gt) <- genes
-    gt$fdr <- p.adjust(gt$pval,method="BH")
+    if (is.null(fdr.method)) {
+      gt$fdr <- p.adjust(gt$pval)
+    }else{
+      gt$fdr <- p.adjust(gt$pval,method=fdr.method)
+    }
     gt
   })
 
@@ -1107,32 +1101,142 @@ visualise.clusters <-function(r,emb,clust=NA,clust.n=5,n.best=4,best.method="cor
 ##' @param root a principal point of fork root
 ##' @param leaves vector of two principal points of fork leaves
 ##' @param genes optional set of genes to estimate association with fork
+##' @param n.mapping number of probabilistic cell-to-tree projections to use for robustness
+##' @param n.mapping number of probabilistic cell-to-tree projections to estimate the amount of upregulation relative to progenitor branch
 ##' @return summary statistics of size effect and p-value of association with bifurcaiton fork.
 ##' @export
-test.fork.genes <- function(r,mat,matw=NULL,root,leaves,genes=rownames(mat),n.cores=30) {
-  sdf <- r$cell.pseudotime;
+test.fork.genes <- function(r,mat,matw=NULL,root,leaves,genes=rownames(mat),n.mapping=1,n.mapping.up=1,n.cores=30) {
   g <- graph.adjacency(r$B>0,mode="undirected")
   vpath = get.shortest.paths(g,root,leaves)
   interPP = intersection(vpath$vpath[[1]],vpath$vpath[[2]])
   which.max(r$pp.info[interPP,]$time)
   vpath = get.shortest.paths(g, r$pp.info[interPP,]$PP[which.max(r$pp.info[interPP,]$time)],leaves)
-  brcells = do.call(rbind,lapply( 1:length(vpath$vpath), function(i){
-    x=vpath$vpath[[i]]
-    segs = as.numeric(names(table(r$pp.info[x,]$seg))[table(r$pp.info[x,]$seg)>1])
-    return(cbind(r$cell.summary[r$cell.summary$seg %in% segs,],i))
+  cat("testing differential expression between branches ..");cat("\n")
+  gtll <- lapply( 1:n.mapping,function(nm){
+    cat("mapping ");cat(nm);cat("\n")
+    cell.info <- r$cell.info[[nm]]
+    brcells = do.call(rbind,lapply( 1:length(vpath$vpath), function(i){
+      x=vpath$vpath[[i]]
+      segs = as.numeric(names(table(r$pp.info[x,]$seg))[table(r$pp.info[x,]$seg)>1])
+      return(cbind(cell.info[cell.info$seg %in% segs,],i))
+    }))
+    # for every gene
+    gtl <- do.call(rbind,mclapply(genes,function(gene) {
+      brcells$exp <- mat[gene,rownames(brcells)]
+      if (is.null(matw)) {brcells$w = 1
+      }else {brcells$w <- matw[gene,r$cells][as.integer(gsub("c","",brcells$node))]}
+      # time-based models
+      m <- mgcv::gam(exp ~ s(t)+s(t,by=as.factor(i))+as.factor(i),data=brcells,familly=gaussian(),weights=brcells$w)
+      return( c(mean(brcells$exp[brcells$i==1])-mean(brcells$exp[brcells$i==2]) , min(summary(m)$p.pv[2]) ) )
+
+      #m <- mgcv::gam(exp ~ s(t)+as.factor(i),data=brcells,familly=gaussian(),weights=brcells$w)
+      #return( c(mean(brcells$exp[brcells$i==2])-mean(brcells$exp[brcells$i==1]) , min(summary(m)$s.pv[2:3]) ) )
+    },mc.cores=n.cores,mc.preschedule=T));
+    colnames(gtl) = c("effect","p"); rownames(gtl) = genes; gtl = as.data.frame(gtl)
+    return(gtl)
+  })
+
+  effect = do.call(cbind,lapply(gtll,function(gtl) gtl$effect ))
+  if (length(gtll) > 1) {effect <- apply(effect,1,median)}
+  pval = do.call(cbind,lapply(gtll,function(gtl) gtl$p ))
+  if (length(gtll) > 1) {pval <- apply(pval,1,median)}
+  fdr = do.call(cbind,lapply(gtll,function(gtl) p.adjust(gtl$p,"BH") ))
+  if (length(gtll) > 1) {fdr <- apply(fdr,1,median)}
+  st = do.call(cbind,lapply(gtll,function(gtl) gtl$p < 5e-2 ))
+  if (length(gtll) > 1) {st <- apply(st,1,mean)}
+  stf = do.call(cbind,lapply(gtll,function(gtl) p.adjust(gtl$p,"BH") < 5e-2 ))
+  if (length(gtll) > 1) {stf <- apply(stf,1,mean)}
+
+  ### here add a code that estimates the amount of upregulation relative to progenitor branch.
+  cat("testing upregulation in derivative relative to progenitor branch ..");cat("\n")
+  # n.mapping.up
+  eu <- do.call(cbind,lapply(leaves[1:2],function(leave){
+    segs = extract.subtree(ppt,c(root,leave))
+    posit = do.call(rbind,(mclapply(genes,function(gene){
+      eu <- do.call(rbind,lapply(1:n.mapping.up,function(j){
+        cells = rownames(r$cell.info[[j]])[r$cell.info[[j]]$seg %in% segs$segs]
+        ft = lm( mat[gene,cells] ~ r$cell.info[[j]][cells,]$t   )
+        return( c(ft$coefficients[2],summary(ft)$coefficients[2,4] ) )
+      }))
+      if (n.mapping.up > 1) {eu <- apply(eu,2,median)}
+      return(eu)
+    },mc.cores = n.cores,mc.preschedule = TRUE)))
   }))
-  # for every gene
-  gtl <- do.call(rbind,mclapply(genes,function(gene) {
-    brcells$exp <- mat[gene,rownames(brcells)]
-    #plot(brcells$t,brcells$exp,col=brcells$color)
-    if (is.null(matw)) {brcells$w = 1
-    }else {brcells$w <- matw[gene,r$cells][as.integer(gsub("c","",brcells$node))]}
-    # time-based models
-    m <- mgcv::gam(exp ~ s(t)+s(t,by=as.factor(i))+as.factor(i),data=brcells,familly=gaussian(),weights=brcells$w)
-    return( c(mean(brcells$exp[brcells$i==2])-mean(brcells$exp[brcells$i==1]) ,summary(m)$p.pv[2]) )
-  },mc.cores=n.cores,mc.preschedule=T));
-  colnames(gtl) = c("effect","p"); rownames(gtl) = genes; gtl = as.data.frame(gtl)
-  return(gtl);
+  colnames(eu) <- c("pd1.a","pd1.p","pd2.a","pd2.p")
+
+  res <- as.data.frame(cbind(effect = effect, p = pval, fdr = fdr, st = st,stf = stf))
+  colnames(res) <- c("effect","p","fdr","st","stf")
+  rownames(res) <- genes
+  res <- cbind(res,eu)
+  return(res)
+}
+
+
+##' Estimate optimum of expression and time of activation
+##' @param r ppt.tree object
+##' @param mat expression matrix
+##' @return ..
+##' @export
+branch.specific.genes <- function(fork.de,stf.cut = 0.7, effect.b1 = 0.1,effect.b2 = 0.3, pd.a = 0, pd.p = 5e-2){
+  ind <- fork.de$stf >= stf.cut & fork.de$effect  > effect.b1 & fork.de$pd1.a > pd.a & fork.de$pd1.p < pd.p
+  gns1 <- rownames(fork.de)[ind]
+
+  ind <- fork.de$stf >= stf.cut & fork.de$effect  < -effect.b2 & fork.de$pd2.a > pd.a & fork.de$pd2.p < pd.p
+  gns2 <- rownames(fork.de)[ind]
+
+  state <- rep(0,nrow(fork.de)); names(state) <- rownames(fork.de)
+  state[gns1] <- 1
+  state[gns2] <- 2
+
+  return(cbind(fork.de,state))
+}
+
+
+##' Estimate optimum of expression and time of activation
+##' @param r ppt.tree object
+##' @param mat expression matrix
+##' @return ..
+##' @export
+activation.statistics <- function(r,mat,root,leave,genes=rownames(mat),deriv.cutoff = 0.015,gamma=1,n.mapping=1,n.cores=10){
+  xx = do.call(rbind,(mclapply(genes,function(gene){
+    gres <- do.call(rbind,lapply(1:n.mapping,function(i){
+      segs = extract.subtree(ppt,c(root,leave))
+      cell.summary <- r$cell.info[[i]]
+      cells <- rownames(cell.summary)[cell.summary$seg %in% segs$segs]
+
+      ft = gam( mat[gene,cells] ~ s(cell.summary[cells,]$t),gamma=gamma)
+      ord <- order(cell.summary[cells,]$t)
+      deriv.n <- ft$fitted.values[ord][-1]-ft$fitted.values[ord][-length(ord)]
+      #deriv.d <- r$cell.summary[cells,]$t[-1]-r$cell.summary[cells,]$t[-length(ord)]
+      deriv.d <- max(ft$fitted.values[ord]) - min(ft$fitted.values[ord])
+      deriv <- deriv.n/deriv.d
+
+      c(cell.summary[cells,]$t[which.max(ft$fitted.values)],
+        min(c(cell.summary[cells,]$t[-1][ deriv > deriv.cutoff ],max(cell.summary[cells,]$t))) )
+    }))
+    c( median(gres[,1]),median(gres[,2]) )
+  },mc.cores = n.cores,mc.preschedule = TRUE)))
+  rownames(xx) <- genes
+  colnames(xx) <- c("optimum","activation")
+  return(xx)
+}
+
+
+# estimate statistics of activation:
+activation.fork <- function(r,fork.de,mat,root,leaves,deriv.cutoff = 0.015,gamma=1,n.mapping=1,n.cores=10){
+  cat("estimate activation patterns .. branch 1"); cat("\n")
+  gg1 <- rownames(fork.de)[fork.de$state==1]
+  act1 <- activation.statistics(r,mat,root,leaves[1],genes=gg1,deriv.cutoff = deriv.cutoff,gamma=gamma,n.mapping=n.mapping,n.cores=n.cores)
+
+  cat("estimate activation patterns .. branch 2"); cat("\n")
+  gg2 <- rownames(fork.de)[fork.de$state==2]
+  act2 <- activation.statistics(r,fpm,root,leaves[2],genes=gg2,deriv.cutoff = deriv.cutoff,gamma=gamma,n.mapping=n.mapping,n.cores=n.cores)
+
+  act <- cbind( rep(NA,nrow(fork.de)),rep(NA,nrow(fork.de)) );
+  rownames(act) <- rownames(fork.de); colnames(act) <- colnames(act1)
+  act[gg1,] <- act1
+  act[gg2,] <- act2
+  return( cbind(fork.de,act) )
 }
 
 
@@ -1155,6 +1259,27 @@ extract.subtree = function(r,nodes){
   segs = segs[segs %in% names(table(segs))[table(segs) > 1]]
   #v=v[ r$pp.info[v,]$seg %in% unique(segs)  ] #list( segs = unique(segs), pp = v )
   list( segs = unique(segs) )
+}
+
+##' Extract subtree of the tree
+##' @param r ppt.tree object
+##' @param nodes set tips or internal nodes (bifurcations) to extract subtree
+##' @return list of segments comprising a subtree.
+##' @export
+fork.pt = function(r,root,leaves){
+  b1 <- extract.subtree(r,c(root,leaves[1]))
+  b2 <- extract.subtree(r,c(root,leaves[2]))
+  segs.prog <- intersect(b1$segs,b2$segs)
+  segs.b1 <- setdiff(b1$segs,segs.prog)
+  segs.b2 <- setdiff(b2$segs,segs.prog)
+
+  time.stat <- c( min(r$pp.info$time[r$pp.info$seg %in% segs.prog]),
+                  max(r$pp.info$time[r$pp.info$seg %in% segs.prog]),
+                  max(r$pp.info$time[r$pp.info$seg %in% segs.b1]),
+                  max(r$pp.info$time[r$pp.info$seg %in% segs.b2])
+  )
+  names(time.stat) <- c("root","bifurcation","leave 1","leave 2")
+  return(time.stat)
 }
 
 ##' Decompose a number by degrees of 2.

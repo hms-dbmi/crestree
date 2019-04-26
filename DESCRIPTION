@@ -22,7 +22,6 @@ Imports:
     Rcpp,
     inline,
     RcppArmadillo,
-    Rfast
 LinkingTo: 
     Rcpp,
     RcppArmadillo
