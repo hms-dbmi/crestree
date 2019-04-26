@@ -2,19 +2,31 @@
 % Please edit documentation in R/bifurcation.functions.R
 \name{synchro.path}
 \alias{synchro.path}
-\title{Estimate probabil}
+\title{Estimates pseudotime trends of local intra- and inter-module correlations of fates-specific modules along a single trajectory}
 \usage{
 synchro.path(r, mat, genesetA, genesetB, w, step,
   n.mapping = length(r$cell.info), subtree, perm = FALSE)
 }
 \arguments{
-\item{n.samples}{a number of seed samplings.}
+\item{mat}{expression matrix}
 
-\item{seeds}{a vector of seeds to use. Overwrites n.samples.}
+\item{genesetA}{a vector of fate-specific genes for first post-bifurcation branch}
+
+\item{genesetB}{a vector of fate-specific genes for second post-bifurcation branch}
+
+\item{w}{local window, in number of cells, to estimate correlations}
+
+\item{step}{step, in number of cells, between local windows}
+
+\item{subtree}{trajectory, consisting of a vector of segments comprising trajectory}
+
+\item{perm}{boolean, estimate control trends for local permutations instread of real expression matrix}
+
+\item{ppt}{ppt object}
 }
 \value{
-a list of pptree objects
+estimate of local correlation trends along trajectory
 }
 \description{
-Estimate probabil
+Estimates pseudotime trends of local intra- and inter-module correlations of fates-specific modules along a single trajectory
 }

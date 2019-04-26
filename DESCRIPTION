@@ -22,6 +22,9 @@ Imports:
     Rcpp,
     inline,
     RcppArmadillo,
+    ggplot2,
+    gridExtra,
+    grid
 LinkingTo: 
     Rcpp,
     RcppArmadillo

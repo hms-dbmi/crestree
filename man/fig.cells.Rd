@@ -2,18 +2,18 @@
 % Please edit documentation in R/bifurcation.functions.R
 \name{fig.cells}
 \alias{fig.cells}
-\title{Estimate probabil}
+\title{Visualize cells assigned to each local window}
 \usage{
 fig.cells(emb, freq)
 }
 \arguments{
-\item{n.samples}{a number of seed samplings.}
+\item{emb}{embedding}
 
-\item{seeds}{a vector of seeds to use. Overwrites n.samples.}
+\item{freq}{cell probabilities of assignment to local windows.}
 }
 \value{
-a list of pptree objects
+ggplot2 object
 }
 \description{
-Estimate probabil
+Visualize cells assigned to each local window
 }

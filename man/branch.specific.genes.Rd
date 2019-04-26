@@ -2,19 +2,27 @@
 % Please edit documentation in R/crestree.functions.R
 \name{branch.specific.genes}
 \alias{branch.specific.genes}
-\title{Estimate optimum of expression and time of activation}
+\title{Assign genes differentially expressed between two post-bifurcation branches}
 \usage{
 branch.specific.genes(fork.de, stf.cut = 0.7, effect.b1 = 0.1,
   effect.b2 = 0.3, pd.a = 0, pd.p = 0.05)
 }
 \arguments{
-\item{r}{ppt.tree object}
+\item{fork.de}{statistics on expression differences betwee post-bifurcation branches, return of test.fork.genes}
 
-\item{mat}{expression matrix}
+\item{stf.cut}{fraction of projections when gene passed fdr < 0.05}
+
+\item{effect.b1}{expression differences to call gene as differentially upregulated at branch 1}
+
+\item{effect.b2}{expression differences to call gene as differentially upregulated at branch 2}
+
+\item{pd.a}{minium expression increase at derivative compared to progenitor branches to call gene as branch-specific}
+
+\item{pd.p}{p-value of expression changes of derivative compared to progenitor branches to call gene as branch-specific}
 }
 \value{
-..
+table fork.de  with added column stat, which classfies genes in branch-specifc (1 or 2) and non-branch-specific (0)
 }
 \description{
-Estimate optimum of expression and time of activation
+Assign genes differentially expressed between two post-bifurcation branches
 }

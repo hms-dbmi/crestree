@@ -2,18 +2,22 @@
 % Please edit documentation in R/bifurcation.functions.R
 \name{slide.cors}
 \alias{slide.cors}
-\title{Estimate probabil}
+\title{Assign cells in a probabilistic manner to non-intersecting windows along pseudotime}
 \usage{
 slide.cors(freq, mat, genesetA, genesetB)
 }
 \arguments{
-\item{n.samples}{a number of seed samplings.}
+\item{freq}{list of per-window cell probabilities. Outcome of slide.cells}
 
-\item{seeds}{a vector of seeds to use. Overwrites n.samples.}
+\item{mat}{expression matrix}
+
+\item{genesetA}{a vector of fate-specific genes for first post-bifurcation branch}
+
+\item{genesetB}{a vector of fate-specific genes for second post-bifurcation branch}
 }
 \value{
-a list of pptree objects
+a list of local per-window matrices of average gene correlations with two fate-specific gene modules
 }
 \description{
-Estimate probabil
+Assign cells in a probabilistic manner to non-intersecting windows along pseudotime
 }

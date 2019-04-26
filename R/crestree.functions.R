@@ -371,8 +371,7 @@ plotppt <- function(r,emb,F=NULL, gene=NULL, main=gene, mat=NULL, pattern.cell=N
   }
 
   if (!is.na(subtree)){
-    cex.col[rownames(r$cell.summary)][!r$cell.summary$seg %in% subtree$seg] <- "black"
-    #tree.col[rownames(r$pp.info)][!r$pp.info$seg %in% subtree$seg] <- "black"
+    #cex.col[rownames(r$cell.summary)][!r$cell.summary$seg %in% subtree$seg] <- "black"
     tree.col[!r$pp.info$seg %in% subtree$seg] <- "grey80"
     vi[vi==TRUE][rownames(r$cell.summary)][!r$cell.summary$seg %in% subtree$seg] <- FALSE
   }
@@ -1172,10 +1171,14 @@ test.fork.genes <- function(r,mat,matw=NULL,root,leaves,genes=rownames(mat),n.ma
 }
 
 
-##' Estimate optimum of expression and time of activation
-##' @param r ppt.tree object
-##' @param mat expression matrix
-##' @return ..
+##' Assign genes differentially expressed between two post-bifurcation branches
+##' @param fork.de statistics on expression differences betwee post-bifurcation branches, return of test.fork.genes
+##' @param stf.cut fraction of projections when gene passed fdr < 0.05
+##' @param effect.b1 expression differences to call gene as differentially upregulated at branch 1
+##' @param effect.b2 expression differences to call gene as differentially upregulated at branch 2
+##' @param pd.a  minium expression increase at derivative compared to progenitor branches to call gene as branch-specific
+##' @param pd.p p-value of expression changes of derivative compared to progenitor branches to call gene as branch-specific
+##' @return table fork.de  with added column stat, which classfies genes in branch-specifc (1 or 2) and non-branch-specific (0)
 ##' @export
 branch.specific.genes <- function(fork.de,stf.cut = 0.7, effect.b1 = 0.1,effect.b2 = 0.3, pd.a = 0, pd.p = 5e-2){
   ind <- fork.de$stf >= stf.cut & fork.de$effect  > effect.b1 & fork.de$pd1.a > pd.a & fork.de$pd1.p < pd.p
@@ -1195,7 +1198,14 @@ branch.specific.genes <- function(fork.de,stf.cut = 0.7, effect.b1 = 0.1,effect.
 ##' Estimate optimum of expression and time of activation
 ##' @param r ppt.tree object
 ##' @param mat expression matrix
-##' @return ..
+##' @param root root of progenitor branch of bifurcation
+##' @param leaves leaves of derivative branches of bifurcation
+##' @param genes genes to estimate parameters
+##' @param deriv.cutoff a first passage of derivative through cutoff 'deriv.cutoff' to predict activation timing
+##' @param gamma gamma parameter in gam function
+##' @param n.mapping results are averaged among n.mapping number of probabilsitic cell projections
+##' @param n.cores number of cores to use
+##' @return per gene timing of optimum and activation
 ##' @export
 activation.statistics <- function(r,mat,root,leave,genes=rownames(mat),deriv.cutoff = 0.015,gamma=1,n.mapping=1,n.cores=10){
   xx = do.call(rbind,(mclapply(genes,function(gene){
@@ -1222,7 +1232,18 @@ activation.statistics <- function(r,mat,root,leave,genes=rownames(mat),deriv.cut
 }
 
 
-# estimate statistics of activation:
+##' Estimate optimum of expression and time of activation
+##' @param r ppt.tree object
+##' @param fork.de outcome of test.fork.genes function
+##' @param mat expression matrix
+##' @param root root of progenitor branch of bifurcation
+##' @param leaves leaves of derivative branches of bifurcation
+##' @param deriv.cutoff a first passage of derivative through cutoff 'deriv.cutoff' to predict activation timing
+##' @param gamma gamma parameter in gam function
+##' @param n.mapping results are averaged among n.mapping number of probabilsitic cell projections
+##' @param n.cores number of cores to use
+##' @return table fork.de with added per gene timing of optimum and activation
+##' @export
 activation.fork <- function(r,fork.de,mat,root,leaves,deriv.cutoff = 0.015,gamma=1,n.mapping=1,n.cores=10){
   cat("estimate activation patterns .. branch 1"); cat("\n")
   gg1 <- rownames(fork.de)[fork.de$state==1]

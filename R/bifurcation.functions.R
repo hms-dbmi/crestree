@@ -1,7 +1,12 @@
-##' Estimate probabil
-##' @param  n.samples a number of seed samplings.
-##' @param seeds a vector of seeds to use. Overwrites n.samples.
-##' @return a list of pptree objects
+##' Assign cells in a probabilistic manner to non-intersecting windows along pseudotime
+##' @param  r ppt tree
+##' @param root root of progenitor branch of bifurcation
+##' @param leaves leaves of derivative branches of bifurcation
+##' @param wind number of cell per local pseudotime window
+##' @param mapping boolean, if project cells onto tree pseudotime in a probabilistic manner. TRUE by default.
+##' @param regions manually assign coordinates of windows
+##' @param n.cores number of cores to use
+##' @return a list of cell probabilisties of being in each local pseudotime window
 ##' @export
 slide.cells <- function(r,root,leaves,wind=50,mapping=TRUE,regions=NULL,n.cores=10){
   segs <- extract.subtree(r,c(root,leaves))
@@ -86,10 +91,12 @@ slide.cells <- function(r,root,leaves,wind=50,mapping=TRUE,regions=NULL,n.cores=
 }
 
 
-##' Estimate probabil
-##' @param  n.samples a number of seed samplings.
-##' @param seeds a vector of seeds to use. Overwrites n.samples.
-##' @return a list of pptree objects
+##' Assign cells in a probabilistic manner to non-intersecting windows along pseudotime
+##' @param freq list of per-window cell probabilities. Outcome of slide.cells
+##' @param mat expression matrix
+##' @param genesetA a vector of fate-specific genes for first post-bifurcation branch
+##' @param genesetB a vector of fate-specific genes for second post-bifurcation branch
+##' @return a list of local per-window matrices of average gene correlations with two fate-specific gene modules
 ##' @export
 slide.cors <- function(freq,mat,genesetA,genesetB){
   lapply( 1:length(freq),function(j){
@@ -104,10 +111,10 @@ slide.cors <- function(freq,mat,genesetA,genesetB){
 
 
 
-##' Estimate probabil
-##' @param  n.samples a number of seed samplings.
-##' @param seeds a vector of seeds to use. Overwrites n.samples.
-##' @return a list of pptree objects
+##' Visualize cells assigned to each local window
+##' @param emb embedding
+##' @param freq cell probabilities of assignment to local windows.
+##' @return ggplot2 object
 ##' @export
 fig.cells <- function(emb,freq){
   lapply( 1:length(freq),function(j){
@@ -121,10 +128,12 @@ fig.cells <- function(emb,freq){
 }
 
 
-##' Estimate probabil
-##' @param  n.samples a number of seed samplings.
-##' @param seeds a vector of seeds to use. Overwrites n.samples.
-##' @return a list of pptree objects
+##' Visualize patterns of local correlations in consequtive windows.
+##' @param  cors a list of local average correlations with fate-specific modules. Outcome of slide.cors function.
+##' @param genesetA a vector of fate-specific genes of bifurcation branch 1
+##' @param genesetB a vector of fate-specific genes of bifurcation branch 2
+##' @param val boolean, if show the degree of "repulsion" of fate-specific modules. FALSE by default.
+##' @return ggplot object visualising pattern of local correlations in consequtive windows.
 ##' @export
 fig.cors <- function(cors,genesetA,genesetB,val=FALSE){
   lapply( cors,function(corc){
@@ -146,26 +155,22 @@ fig.cors <- function(cors,genesetA,genesetB,val=FALSE){
 
 
 
-##' Estimate probabil
-##' @param  n.samples a number of seed samplings.
-##' @param seeds a vector of seeds to use. Overwrites n.samples.
-##' @return a list of pptree objects
+##' Estimates pseudotime trends of local intra- and inter-module correlations of fates-specific modules
+##' @param ppt ppt object
+##' @param fpm expression matrix
+##' @param root root of progenitor branch of bifurcation
+##' @param leaves leaves of derivative branches of bifurcation
+##' @param genesetA a vector of fate-specific genes for first post-bifurcation branch
+##' @param genesetB a vector of fate-specific genes for second post-bifurcation branch
+##' @param w local window, in number of cells, to estimate correlations
+##' @param step step, in number of cells, between local windows
+##' @param n.mapping number of probabilistic cells projection to use for estimates
+##' @param n.points number of pseudotime points to extrapolate and visualize patterns
+##' @param span.smooth smooth parameters of loess
+##' @param perm boolean, estimate control trends for local permutations instread of real expression matrix
+##' @return estimates of local correlation trend for each probabilistic cell projection and average among cell projections
 ##' @export
-fig.cor.evol <- function(cors,freq,emb,genesetA,genesetB){
-  fig_cells <- fig.cells(emb,freq)
-  fig_cor <- fig.cors(cors,genesetA,genesetB)
-  pl <- marrangeGrob( t(c(fig_cells,fig_cor)),ncol=length(fig_cells),nrow=2,
-                      layout_matrix = matrix(seq_len(2*length(fig_cells)), nrow = 2, ncol = length(fig_cells),byrow=TRUE),top=NA)
-  return(pl)
-}
-
-
-##' Estimate probabil
-##' @param  n.samples a number of seed samplings.
-##' @param seeds a vector of seeds to use. Overwrites n.samples.
-##' @return a list of pptree objects
-##' @export
-synchro <- function(ppt,fpm,root,leaves,genesetA,genesetB,w,step,n.mapping,n.points=100,span.smooth = 0.75,perm=FALSE){
+synchro <- function(ppt,fpm,root,leaves,genesetA,genesetB,w,step,n.mapping,n.points=100,span.smooth = 0.1,perm=FALSE){
   cat('process path 1 of 2');cat('\n')
   subtree <- extract.subtree(ppt,c(root,leaves[1]))
   xx1 <- synchro.path(ppt,fpm,genesetA,genesetB,w,step,n.mapping = n.mapping,subtree,perm=perm);
@@ -199,10 +204,16 @@ synchro <- function(ppt,fpm,root,leaves,genesetA,genesetB,w,step,n.mapping,n.poi
 }
 
 
-##' Estimate probabil
-##' @param  n.samples a number of seed samplings.
-##' @param seeds a vector of seeds to use. Overwrites n.samples.
-##' @return a list of pptree objects
+##' Estimates pseudotime trends of local intra- and inter-module correlations of fates-specific modules along a single trajectory
+##' @param ppt ppt object
+##' @param mat expression matrix
+##' @param genesetA a vector of fate-specific genes for first post-bifurcation branch
+##' @param genesetB a vector of fate-specific genes for second post-bifurcation branch
+##' @param w local window, in number of cells, to estimate correlations
+##' @param step step, in number of cells, between local windows
+##' @param subtree trajectory, consisting of a vector of segments comprising trajectory
+##' @param perm boolean, estimate control trends for local permutations instread of real expression matrix
+##' @return estimate of local correlation trends along trajectory
 ##' @export
 synchro.path = function(r,mat,genesetA,genesetB,w,step,n.mapping = length(r$cell.info),subtree,perm=FALSE){
   xx1=do.call(rbind,mclapply( 1:n.mapping,function(j){
@@ -250,10 +261,9 @@ synchro.path = function(r,mat,genesetA,genesetB,w,step,n.mapping = length(r$cell
 }
 
 
-##' Estimate probabil
-##' @param  n.samples a number of seed samplings.
-##' @param seeds a vector of seeds to use. Overwrites n.samples.
-##' @return a list of pptree objects
+##' Visualise local correlation trends of inter- and intra- module local correlations of fate-specific modules
+##' @param  outcome of synchro function
+##' @return visualize combiation of ggplot2 objects
 ##' @export
 visualize.synchro <- function(crd){
   consensus <- crd[[1]]

@@ -2,19 +2,29 @@
 % Please edit documentation in R/bifurcation.functions.R
 \name{slide.cells}
 \alias{slide.cells}
-\title{Estimate probabil}
+\title{Assign cells in a probabilistic manner to non-intersecting windows along pseudotime}
 \usage{
 slide.cells(r, root, leaves, wind = 50, mapping = TRUE,
   regions = NULL, n.cores = 10)
 }
 \arguments{
-\item{n.samples}{a number of seed samplings.}
+\item{r}{ppt tree}
 
-\item{seeds}{a vector of seeds to use. Overwrites n.samples.}
+\item{root}{root of progenitor branch of bifurcation}
+
+\item{leaves}{leaves of derivative branches of bifurcation}
+
+\item{wind}{number of cell per local pseudotime window}
+
+\item{mapping}{boolean, if project cells onto tree pseudotime in a probabilistic manner. TRUE by default.}
+
+\item{regions}{manually assign coordinates of windows}
+
+\item{n.cores}{number of cores to use}
 }
 \value{
-a list of pptree objects
+a list of cell probabilisties of being in each local pseudotime window
 }
 \description{
-Estimate probabil
+Assign cells in a probabilistic manner to non-intersecting windows along pseudotime
 }

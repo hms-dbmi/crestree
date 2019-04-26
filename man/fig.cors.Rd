@@ -2,18 +2,22 @@
 % Please edit documentation in R/bifurcation.functions.R
 \name{fig.cors}
 \alias{fig.cors}
-\title{Estimate probabil}
+\title{Visualize patterns of local correlations in consequtive windows.}
 \usage{
 fig.cors(cors, genesetA, genesetB, val = FALSE)
 }
 \arguments{
-\item{n.samples}{a number of seed samplings.}
+\item{cors}{a list of local average correlations with fate-specific modules. Outcome of slide.cors function.}
 
-\item{seeds}{a vector of seeds to use. Overwrites n.samples.}
+\item{genesetA}{a vector of fate-specific genes of bifurcation branch 1}
+
+\item{genesetB}{a vector of fate-specific genes of bifurcation branch 2}
+
+\item{val}{boolean, if show the degree of "repulsion" of fate-specific modules. FALSE by default.}
 }
 \value{
-a list of pptree objects
+ggplot object visualising pattern of local correlations in consequtive windows.
 }
 \description{
-Estimate probabil
+Visualize patterns of local correlations in consequtive windows.
 }

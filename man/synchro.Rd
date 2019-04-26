@@ -2,19 +2,39 @@
 % Please edit documentation in R/bifurcation.functions.R
 \name{synchro}
 \alias{synchro}
-\title{Estimate probabil}
+\title{Estimates pseudotime trends of local intra- and inter-module correlations of fates-specific modules}
 \usage{
 synchro(ppt, fpm, root, leaves, genesetA, genesetB, w, step, n.mapping,
-  n.points = 100, span.smooth = 0.75, perm = FALSE)
+  n.points = 100, span.smooth = 0.1, perm = FALSE)
 }
 \arguments{
-\item{n.samples}{a number of seed samplings.}
+\item{ppt}{ppt object}
 
-\item{seeds}{a vector of seeds to use. Overwrites n.samples.}
+\item{fpm}{expression matrix}
+
+\item{root}{root of progenitor branch of bifurcation}
+
+\item{leaves}{leaves of derivative branches of bifurcation}
+
+\item{genesetA}{a vector of fate-specific genes for first post-bifurcation branch}
+
+\item{genesetB}{a vector of fate-specific genes for second post-bifurcation branch}
+
+\item{w}{local window, in number of cells, to estimate correlations}
+
+\item{step}{step, in number of cells, between local windows}
+
+\item{n.mapping}{number of probabilistic cells projection to use for estimates}
+
+\item{n.points}{number of pseudotime points to extrapolate and visualize patterns}
+
+\item{span.smooth}{smooth parameters of loess}
+
+\item{perm}{boolean, estimate control trends for local permutations instread of real expression matrix}
 }
 \value{
-a list of pptree objects
+estimates of local correlation trend for each probabilistic cell projection and average among cell projections
 }
 \description{
-Estimate probabil
+Estimates pseudotime trends of local intra- and inter-module correlations of fates-specific modules
 }
