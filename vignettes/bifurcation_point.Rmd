@@ -238,7 +238,7 @@ inclusion.sensory <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),
 ```
 
 Average inclusion timing of each gene is
-```{r,warning = FALSE, message = FALSE, results = "hide"}
+```{r,warning = FALSE, message = FALSE}
 head(apply(inclusion.sensory,1,mean))
 ```
 
@@ -248,7 +248,7 @@ As an example, predicted cumulative probability of gene *Pou4f1* inclusion is sh
 show.gene.inclusion("Pou4f1",inclusion.sensory)
 ```
 
-Overall summary statistics of inclusion probabilistics is visualized using `show.inclusion.summary` routine with each arrow reflecting cumulative probability of a single gene (as in example above):
+Overall summary statistics of inclusion probabilistics is visualized using `show.inclusion.summary` routine with each row of the heatmap reflecting cumulative inclusion probability of a single gene (as in example above):
 ```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 4, fig.height = 4}
 show.inclusion.summary(inclusion.sensory,gns.show=c("Neurog2","Pou4f1"))
 ```
@@ -271,7 +271,7 @@ show.inclusion.summary(inclusion.sensory.control,gns.show=NA)
 ```
 
 
-Parameter `alp`, which was set to 20 in the analysis above, in routine `onset` regulates stringency of inclusion point detection. Assessing summary statistics on inclusion times for a range of `alp` levels for real and permutated expression profiles enables selection of optimal `alp`. First, select a range of `alp` levels:
+Parameter `alp` in routine `onset`, which was set to 20 in the analysis above, regulates stringency of inclusion point detection. Assessing summary statistics on inclusion times for a range of `alp` levels for real and permutated expression profiles enables selection of optimal `alp`. First, select a range of `alp` levels:
 
 ```{r,warning = FALSE, message = FALSE, results = "hide"}
 alps <- seq(1,40,length.out = 10)
@@ -302,7 +302,7 @@ incl.perm <- unlist(lapply( alps,function(alp){
 }))
 ```
 
-Comparison of early cuulative inclusion timing for real and control expression levels:
+Comparison of early inclusion timing among all genes for real and control expression levels:
 
 ```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 4, fig.height = 2.5}
 inclusion.stat(alps, incl.real, incl.perm)

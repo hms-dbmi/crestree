@@ -508,7 +508,7 @@ show.gene.inclusion <- function(gn,matSwitch,bins=8,par=FALSE){
   #gn = "Neurog2"
   lbl <- (2:ncol(logHist))/ncol(logHist)*max(matSwitch); #lbl <- round(lbl,2)
   plot( lbl,logHist[gn,2:length(sg)],lwd=6,
-        type="l",yaxt="na",xlab="pseudotime",ylab="inclusion\nprobability",cex.lab=1.5,main=gn,cex.main=1.5,font.main=3)
+        type="l",yaxt="na",xlab="pseudotime",ylab="inclusion\nprobability",cex.lab=1.0,main=gn,cex.main=1.0,font.main=3)
   axis(side=2,at=c(0,0.5,1),cex.axis=1.5)
   abline( h=seq(0,1,0.5),lty = 2,lwd=2,col="grey60")
 }
