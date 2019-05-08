@@ -55,7 +55,7 @@ Bifurcation point is charactarized by a progenitor and derivative branches.
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png)
+![plot of chunk unnamed-chunk-4](figure_bifurcation/unnamed-chunk-4-1.png)
 
 We thus start with selection a root of progenitor branch (355) and two leaves of derivative branches (165 and 91):
 
@@ -71,7 +71,7 @@ subtree <- extract.subtree(ppt,c(root,leaves))
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.3,lwd.tree = 3,subtree=subtree)
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png)
+![plot of chunk unnamed-chunk-6](figure_bifurcation/unnamed-chunk-6-1.png)
 
 A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
 
@@ -171,7 +171,7 @@ plot(t(programs[c(1,3),cells]),col=ppt$cell.summary[cells,]$color,pch=19,cex=0.5
 plot(t(programs[c(2,4),cells]),col=ppt$cell.summary[cells,]$color,pch=19,cex=0.5)
 ```
 
-![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19-1.png)
+![plot of chunk unnamed-chunk-19](figure_bifurcation/unnamed-chunk-19-1.png)
 
 
 ## Coordination of fate biases
@@ -188,7 +188,7 @@ fig_cells <- fig.cells(emb,freq)
 marrangeGrob( c(fig_cells),ncol=length(fig_cells),nrow=1,top=NA)
 ```
 
-![plot of chunk unnamed-chunk-21](figure/unnamed-chunk-21-1.png)
+![plot of chunk unnamed-chunk-21](figure_bifurcation/unnamed-chunk-21-1.png)
 
 Windows can be also selected manually, below we follow selection used in the paper:
 
@@ -203,7 +203,7 @@ fig_cells <- fig.cells(emb,freq)
 marrangeGrob( c(fig_cells),ncol=length(fig_cells),nrow=1,top=NA)
 ```
 
-![plot of chunk unnamed-chunk-23](figure/unnamed-chunk-23-1.png)
+![plot of chunk unnamed-chunk-23](figure_bifurcation/unnamed-chunk-23-1.png)
 
 Next, routine `slide.cors` estimates average correlation of each early fate-specific gene with both modules (`genes.sensory.early` and `genes.autonomic.early`) in each window of cells:
 
@@ -219,7 +219,7 @@ marrangeGrob( c(fig_cells,fig_cor),ncol=length(fig_cells),nrow=2,
               layout_matrix = matrix(seq_len(2*length(fig_cells)), nrow = 2, ncol = length(fig_cells),byrow=TRUE),top=NA)
 ```
 
-![plot of chunk unnamed-chunk-25](figure/unnamed-chunk-25-1.png)
+![plot of chunk unnamed-chunk-25](figure_bifurcation/unnamed-chunk-25-1.png)
   
 To obtain more contrasted (and reproducible with the paper) view, a set of early genes could be further cleaned up by removing fate-specific genes having low correlation with its modules around bifurcation point:
 
