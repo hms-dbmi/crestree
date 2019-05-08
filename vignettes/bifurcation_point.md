@@ -1,4 +1,5 @@
-# Analysis of bifurcation points
+# Analysis of bifurcation points"
+
 
 
 This vignette describes analysis of individual bifurcation points based on a reconstructed transcriptional tree. As example, it explores bifurcation point between sensory and autonomic nervous systems in neural crest. The guideline starts with tree reconstruction, identifies fate-specific genes and estimates timing of their activation, assess existence and formation of fate-biases, and predicts time of genes inclusion in fate-biased phase.
@@ -35,10 +36,10 @@ The detailed guide for tree reconstruction is described in https://github.com/hm
 M <- length(nc.cells); 
 lambda <- 250; 
 sigma <- 0.04
-#ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=250, sigma=0.04, metrics="cosine", M=M, err.cut = 5e-3, n.steps=30, seed=1, plot=FALSE)
-#ppt <- cleanup.branches(ppt,tips.remove = c(139,295))
-#ppt <- setroot(ppt,355)
-#ppt <- project.cells.onto.ppt(ppt,n.mapping = 100)
+ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=250, sigma=0.04, metrics="cosine", M=M, err.cut = 5e-3, n.steps=30, seed=1, plot=FALSE)
+ppt <- cleanup.branches(ppt,tips.remove = c(139,295))
+ppt <- setroot(ppt,355)
+ppt <- project.cells.onto.ppt(ppt,n.mapping = 100)
 ```
 
 Alternatively, the tree object used in the paper can be downloaded from:
@@ -275,9 +276,9 @@ Average inclusion timing of each gene is
 ```r
 head(apply(inclusion.sensory,1,mean))
 ##         Rdh10          Hes6         Cxcr4 5730559C18Rik          Utrn 
-##      11.17453      13.00036      15.66524      12.09579      13.38760 
+##      11.05251      13.10353      15.71367      11.66093      13.29917 
 ##          Gamt 
-##      15.45684
+##      15.35016
 ```
 
 
@@ -343,7 +344,7 @@ Output is average inclusion time for each alp level:
 
 ```r
 head(incl.real)
-## [1]  8.349644 10.047820 11.183495 12.011598 12.615876 12.951238
+## [1]  8.27393 10.00988 11.30160 12.09743 12.65199 13.20117
 ```
 
 Estimate inclusion time for locally permuted expression levels by setting `do.perm=TRUE` and local permutation window `winperm=10`:
