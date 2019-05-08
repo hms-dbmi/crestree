@@ -1002,7 +1002,7 @@ visualise.trajectory = function(r,gene,X,cex.cell=0.3,cex.lab=2,cex.axis=1.5,cex
 ##' @param reclust whether to reorder cells inside individual clusters on heatmap according to hierarchical clustering using Ward linkage and 1-Pearson as a distance between genes. By default is FALSE.
 ##' @param subtree visualize clusters for a given subtree
 ##' @export
-visualise.clusters <-function(r,emb,clust=NA,clust.n=5,n.best=4,best.method="cor",cex.gene=1,cex.cell=0.1,cex.tree=2,subtree=NA, reclust=FALSE){
+visualise.clusters <-function(r,emb,clust=NA,clust.n=5,n.best=4,best.method="cor",cex.gene=1,cex.cell=0.1,cex.tree=2,subtree=NA, reclust=TRUE){
 
 
   if ( !is.na(clust) & sum(!names(clust)%in%rownames(r$fit.summary))>0) {stop( paste("Expression is not fitted for",sum(!names(clust)%in%rownames(r$fit.summary)),"genes" ))}

@@ -28,7 +28,6 @@ library(pcaMethods)
 library(Rcpp) 
 library(inline) 
 library(RcppArmadillo) 
-#library(Rfast)
 
 library(crestree)
 ```
@@ -135,7 +134,6 @@ plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 
 Spurious branchs are removed using `cleanup.branches` routine, which suggests a number of criterion to eliminate undesired branches. Below we retain only `tips.number` tips of the tree that maximally preserve the tree structure (alternatively, we could directly supply a vector of tip ids `tips.remove` for removal):
 ```{r,fig.width = 3, fig.height = 3}
-#ppt <- t.cleanup.branches.new(ppt,tips.number = 5)
 ppt <- cleanup.branches(ppt,tips.remove = c(139,295))
 ```
 Of note, after removing spurious branches, numeration of the remaining principal point changes:
@@ -179,7 +177,7 @@ knitr::kable(head(ppt$stat.association[order(ppt$stat.association$pval),]))
 ```
 
 Only differentially expressed genes (TRUE in `sign`) are later used to model expression patterns along the tree. A set of differentially expressed genes can be manually modified in a column `sign`. In the original paper, differentially expressed genes (vector `genes.tree` in crest data) were estimated based on 100 probabilistic cell mappings, here we define only them as significant (to avoid time-consuming calculations):
-```{r, echo=FALSE, results='asis'}
+```{r, results='asis'}
 genes.tree <- crest$genes.tree
 
 ppt$stat.association$sign <- FALSE
@@ -263,8 +261,8 @@ knitr::kable(head(stat.subtree[order(stat.subtree$pval),]))
 ```
 
 ## Analysis of bifurcation point
-A particularly interesting implication of the tree is analysis of bifurcation point. Usually, the first step of such analysis is infererence of genes that are differentially expressed between two post-bifurcaiton branches. Bifurcaiton point is formalized as a fork consisting of a root and two leaves. Below we select a root and two leaves:
-```{r}
+A particularly interesting implication of the tree is analysis of bifurcation point. Usually, the first step of such analysis is infererence of genes that are differentially expressed between two post-bifurcation branches. Bifurcaiton point is formalized as a fork consisting of a root and two leaves. Below we select a root and two leaves:
+```{r,fig.width = 3, fig.height = 3}
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
 
@@ -274,7 +272,7 @@ leaves <- c(165,91)
 ```
 
 A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
-```{r}
+```{r,results="hide"}
 fork.de <- test.fork.genes(ppt,fpm[,],root=root,leaves=leaves,n.mapping = 1,n.cores=30)
 ```
 

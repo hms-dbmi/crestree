@@ -28,7 +28,6 @@ library(pcaMethods)
 library(Rcpp) 
 library(inline) 
 library(RcppArmadillo) 
-#library(Rfast)
 library(crestree)
 library(ggplot2); library(gridExtra); library(grid);
 
@@ -40,6 +39,7 @@ wgm <- crest$wgm
 wgwm <- crest$wgwm # matrix of expression weights
 fpm <- read.table("http://pklab.med.harvard.edu/ruslan/neural_crest/fpm.txt",header=TRUE)
 fpm <- as.matrix(fpm)
+genes.tree <- crest$genes.tree
 ```
   
 ## Run tree reconstruction
@@ -48,16 +48,15 @@ The detailed guide for tree reconstruction is described in https://github.com/hm
 M <- length(nc.cells); 
 lambda <- 250; 
 sigma <- 0.04
-ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=250, sigma=0.04, metrics="cosine", M=M,
-                err.cut = 5e-3, n.steps=30, seed=1, plot=FALSE)
-ppt <- cleanup.branches(ppt,tips.remove = c(139,295))
-ppt <- setroot(ppt,355)
-ppt <- project.cells.onto.ppt(ppt,n.mapping = 100)
+#ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=250, sigma=0.04, metrics="cosine", M=M, err.cut = 5e-3, n.steps=30, seed=1, plot=FALSE)
+#ppt <- cleanup.branches(ppt,tips.remove = c(139,295))
+#ppt <- setroot(ppt,355)
+#ppt <- project.cells.onto.ppt(ppt,n.mapping = 100)
 ```
 
 Alternatively, the tree object used in the paper can be downloaded from:
 ```{r}
-ppt <- readRDS(url("http://pklab.med.harvard.edu/ruslan/neural_crest/tree_structure_full.rds"))s
+ppt <- readRDS(url("http://pklab.med.harvard.edu/ruslan/neural_crest/tree_structure_full.rds"))
 ```
 
 ## Identification of branch-specific genes
@@ -73,10 +72,10 @@ root <- 355
 leaves <- c(165,91)
 ```
 
-Here is fork charactarizing sensory-autonomic bifurcation point:
+Here is a fork charactarizing sensory-autonomic bifurcation point:
 ```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 3, fig.height = 3}
 subtree <- extract.subtree(ppt,c(root,leaves))
-plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 4,subtree=subtree)
+plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.3,lwd.tree = 3,subtree=subtree)
 ```
 
 A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
@@ -84,12 +83,12 @@ A routine `test.fork.genes` performs assessment of genes differentially expressi
 fork.de <- test.fork.genes(ppt,fpm,root=root,leaves=leaves,n.mapping = 10,n.cores=30)
 ```
 
-A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` (`pd2.a`) and p-value `pd1.p` (`pd2.p`) of expression changes from derivative branch 1 (2) to progenitor branch:
+A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` (`pd2.a`) and p-value `pd1.p` (`pd2.p`) of expression changes from first (second) derivative branch to progenitor branch:
 ```{r, results='hide'}
 head(fork.de[order(fork.de$p),],)
 ```
 
-```{r, results='asis'}
+```{r,  echo=FALSE,results='asis'}
 knitr::kable(head(fork.de[order(fork.de$p),],))
 ```
 
@@ -127,14 +126,19 @@ fork.de.act <- activation.fork(ppt,fork.de,fpm,root,leaves,deriv.cutoff = 0.015,
 Branch-specific sets of genes (`genes.sensory` and `genes.autonomic`) can now be partitioned in early and late genes based on time of expression activation. A logical solution is to orient early/late genes relative to bifurcation point. Timing of root, bifurcation point and leaves are
 
 ```{r, results='hide'}
-fork.pt(r,root,leaves)
+fork.pt(ppt,root,leaves)
 ```
 
-```{r}
-knitr::kable(t(fork.pt(r,root,leaves)))
+```{r, echo=FALSE}
+knitr::kable(t(fork.pt(ppt,root,leaves)))
 ```
 
-We use `cutoff = 16.0` on timing of activation to define early and late genes:
+We use `cutoff=16.0` on timing of activation to define early and late genes:
+
+```{r, results='asis'}
+cutoff <- 16.0
+```
+
 ```{r, results='asis'}
 genes.sensory.late <- genes.sensory[fork.de.act[genes.sensory,]$activation > cutoff]
 genes.sensory.early <- setdiff(genes.sensory,genes.sensory.late)
@@ -224,4 +228,85 @@ visualize.synchro(crd)
 ```
 
 
+
+## Formation of correlated module
+
+In order to infer genes orchestrating emergence of local intra-module correlations, we developed an iterative approach that estimates timing of genes inclusion in a core of correlated genes of the module. Routine `onset` estimates inclusion timing of early sensory genes `genes.sensory.early` for vector `mappings` of probabilistic cell projections:
+
+```{r,warning = FALSE, message = FALSE, results = "hide"}
+inclusion.sensory <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,mappings=1:100,do.perm=FALSE,winperm=30,n.cores=30,permut.n=10,n.cores1=1)
+```
+
+Average inclusion timing of each gene is
+```{r,warning = FALSE, message = FALSE, results = "hide"}
+head(apply(inclusion.sensory,1,mean))
+```
+
+
+As an example, predicted cumulative probability of gene *Pou4f1* inclusion is shown below:
+```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 3, fig.height = 3}
+show.gene.inclusion("Pou4f1",inclusion.sensory)
+```
+
+Overall summary statistics of inclusion probabilistics is visualized using `show.inclusion.summary` routine with each arrow reflecting cumulative probability of a single gene (as in example above):
+```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 4, fig.height = 4}
+show.inclusion.summary(inclusion.sensory,gns.show=c("Neurog2","Pou4f1"))
+```
+
+Analogous inference of inclusion timing for early atuonomic module `genes.autonomic.early`:
+```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 4, fig.height = 4}
+inclusion.autonomic <- onset(ppt,geneset=genes.autonomic.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,mappings=1:100,do.perm=FALSE,winperm=30,n.cores=30,permut.n=10,n.cores1=1)
+
+show.inclusion.summary(inclusion.autonomic,gns.show = c("Mef2c","Pbx1"))
+```
+
+## Finding optimal parameter to regulate false positive
+
+For comparison, inclusion events are not detected in a control expression matrix, where expression levels were locally permuted using option `do.perm=TRUE` among `winperm=10` batches of cells along pseudotime:
+
+```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 4, fig.height = 5}
+inclusion.sensory.control <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,
+                 mappings=1:10,do.perm=TRUE,winperm=10,n.cores=30,permut.n=10,n.cores1=1)
+show.inclusion.summary(inclusion.sensory.control,gns.show=NA)
+```
+
+
+Parameter `alp`, which was set to 20 in the analysis above, in routine `onset` regulates stringency of inclusion point detection. Assessing summary statistics on inclusion times for a range of `alp` levels for real and permutated expression profiles enables selection of optimal `alp`. First, select a range of `alp` levels:
+
+```{r,warning = FALSE, message = FALSE, results = "hide"}
+alps <- seq(1,40,length.out = 10)
+```
+
+Then estimate mean gene inclusion time for `alps` levels:
+```{r,warning = FALSE, message = FALSE, results = "hide"}
+incl.real <- unlist(lapply(alps,function(alp){
+  cat(alp);cat('\n')
+  res.est <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=alp,w=40,step=10,n.cells=280, mappings=1:10,do.perm=FALSE,winperm=10,n.cores=30,permut.n=10,n.cores1=1)
+  return(mean(res.est))
+}))
+```
+
+Output is average inclusion time for each alp level:
+
+```{r,warning = FALSE, message = FALSE}
+head(incl.real)
+```
+
+Estimate inclusion time for locally permuted expression levels by setting `do.perm=TRUE` and local permutation window `winperm=10`:
+
+```{r,warning = FALSE, message = FALSE, results = "hide"}
+incl.perm <- unlist(lapply( alps,function(alp){
+  cat(alp);cat('\n')
+  res.est <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=alp,w=40,step=10,n.cells=280, mappings=1:10,do.perm=TRUE,winperm=30,n.cores=30,permut.n=10,n.cores1=1)
+  mean(res.est)
+}))
+```
+
+Comparison of early cuulative inclusion timing for real and control expression levels:
+
+```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 4, fig.height = 2.5}
+inclusion.stat(alps, incl.real, incl.perm)
+```
+
+From that one can see that if `alp > 10` than overall false positive rate in permutations is close to zero, while detection sensitivity of real data gradually declines.
 

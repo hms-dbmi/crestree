@@ -6,7 +6,7 @@
 \usage{
 visualise.clusters(r, emb, clust = NA, clust.n = 5, n.best = 4,
   best.method = "cor", cex.gene = 1, cex.cell = 0.1, cex.tree = 2,
-  subtree = NA, reclust = FALSE)
+  subtree = NA, reclust = TRUE)
 }
 \arguments{
 \item{r}{pptree object}

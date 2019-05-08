@@ -1,4 +1,15 @@
-# Analysis of bifurcation points
+---
+title: "Analysis of bifurcation points"
+#author: "Ruslan Soldatov"
+#date: "2019-05-08"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Analysis of bifurcation points}
+---
+
+
 
 This vignette describes analysis of individual bifurcation points based on a reconstructed transcriptional tree. As example, it explores bifurcation point between sensory and autonomic nervous systems in neural crest. The guideline starts with tree reconstruction, identifies fate-specific genes and estimates timing of their activation, assess existence and formation of fate-biases, and predicts time of genes inclusion in fate-biased phase.
 
@@ -13,7 +24,6 @@ library(pcaMethods)
 library(Rcpp) 
 library(inline) 
 library(RcppArmadillo) 
-#library(Rfast)
 library(crestree)
 library(ggplot2); library(gridExtra); library(grid);
 
@@ -25,6 +35,7 @@ wgm <- crest$wgm
 wgwm <- crest$wgwm # matrix of expression weights
 fpm <- read.table("http://pklab.med.harvard.edu/ruslan/neural_crest/fpm.txt",header=TRUE)
 fpm <- as.matrix(fpm)
+genes.tree <- crest$genes.tree
 ```
   
 ## Run tree reconstruction
@@ -34,20 +45,16 @@ The detailed guide for tree reconstruction is described in https://github.com/hm
 M <- length(nc.cells); 
 lambda <- 250; 
 sigma <- 0.04
-ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=250, sigma=0.04, metrics="cosine", M=M,
-                err.cut = 5e-3, n.steps=30, seed=1, plot=FALSE)
-ppt <- cleanup.branches(ppt,tips.remove = c(139,295))
-ppt <- setroot(ppt,355)
-ppt <- project.cells.onto.ppt(ppt,n.mapping = 100)
+#ppt <- ppt.tree(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, lambda=250, sigma=0.04, metrics="cosine", M=M, err.cut = 5e-3, n.steps=30, seed=1, plot=FALSE)
+#ppt <- cleanup.branches(ppt,tips.remove = c(139,295))
+#ppt <- setroot(ppt,355)
+#ppt <- project.cells.onto.ppt(ppt,n.mapping = 100)
 ```
 
 Alternatively, the tree object used in the paper can be downloaded from:
 
 ```r
-ppt <- readRDS(url("http://pklab.med.harvard.edu/ruslan/neural_crest/tree_structure_full.rds"))s
-## Error: <text>:1:96: unexpected symbol
-## 1: ppt <- readRDS(url("http://pklab.med.harvard.edu/ruslan/neural_crest/tree_structure_full.rds"))s
-##                                                                                                    ^
+ppt <- readRDS(url("http://pklab.med.harvard.edu/ruslan/neural_crest/tree_structure_full.rds"))
 ```
 
 ## Identification of branch-specific genes
@@ -58,7 +65,7 @@ Bifurcation point is charactarized by a progenitor and derivative branches.
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png)
+![plot of chunk unnamed-chunk-52](figure/unnamed-chunk-52-1.png)
 
 We thus start with selection a root of progenitor branch (355) and two leaves of derivative branches (165 and 91):
 
@@ -67,14 +74,14 @@ root <- 355
 leaves <- c(165,91)
 ```
 
-Here is fork charactarizing sensory-autonomic bifurcation point:
+Here is a fork charactarizing sensory-autonomic bifurcation point:
 
 ```r
 subtree <- extract.subtree(ppt,c(root,leaves))
-plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 4,subtree=subtree)
+plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.3,lwd.tree = 3,subtree=subtree)
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png)
+![plot of chunk unnamed-chunk-54](figure/unnamed-chunk-54-1.png)
 
 A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
 
@@ -82,27 +89,21 @@ A routine `test.fork.genes` performs assessment of genes differentially expressi
 fork.de <- test.fork.genes(ppt,fpm,root=root,leaves=leaves,n.mapping = 10,n.cores=30)
 ```
 
-A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` (`pd2.a`) and p-value `pd1.p` (`pd2.p`) of expression changes from derivative branch 1 (2) to progenitor branch:
+A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` (`pd2.a`) and p-value `pd1.p` (`pd2.p`) of expression changes from first (second) derivative branch to progenitor branch:
 
 ```r
 head(fork.de[order(fork.de$p),],)
 ```
 
 
-```r
-knitr::kable(head(fork.de[order(fork.de$p),],))
-```
-
-
-
-|         |     effect|  p| fdr|  st| stf|     pd1.a|     pd1.p|      pd2.a|     pd2.p|
-|:--------|----------:|--:|---:|---:|---:|---------:|---------:|----------:|---------:|
-|Neurog2  |  1.8920098|  0|   0| 1.0| 1.0| 1.0819870| 0.0000000| -0.2581314| 0.0001524|
-|Pcdh8    |  1.1686135|  0|   0| 0.9| 0.9| 0.5379139| 0.0000000| -0.1932169| 0.0000136|
-|Hsd11b2  | -1.5014367|  0|   0| 1.0| 1.0| 0.0756059| 0.1867864|  0.9509055| 0.0000000|
-|Dll1     |  1.4122592|  0|   0| 1.0| 1.0| 1.0439245| 0.0000000|  0.0508581| 0.3153041|
-|Eya2     |  1.0354457|  0|   0| 1.0| 1.0| 0.7724607| 0.0000000|  0.0907785| 0.0000790|
-|Ppp1r14a |  0.9542321|  0|   0| 1.0| 1.0| 0.9800075| 0.0000000|  0.3571761| 0.0000000|
+|        |    effect|  p| fdr|  st| stf|     pd1.a| pd1.p|      pd2.a|     pd2.p|
+|:-------|---------:|--:|---:|---:|---:|---------:|-----:|----------:|---------:|
+|Neurog2 | 1.9032796|  0|   0| 0.9| 0.9| 0.1012255|     0| -0.0262510| 0.0001858|
+|Dll1    | 1.4404789|  0|   0| 1.0| 1.0| 0.0976255|     0|  0.0043581| 0.3941055|
+|Srrm4   | 0.8383684|  0|   0| 1.0| 1.0| 0.0646809|     0|  0.0099734| 0.0002647|
+|Mfng    | 0.9532576|  0|   0| 1.0| 1.0| 0.0630761|     0|  0.0034360| 0.4424417|
+|Eya2    | 1.0311280|  0|   0| 0.9| 0.9| 0.0737302|     0|  0.0082446| 0.0035890|
+|Pcdh8   | 1.1417276|  0|   0| 1.0| 0.9| 0.0515220|     0| -0.0193619| 0.0000199|
 
 We next consider a gene to be preferentially expressed along the first (second) branch if it has `effect.b1` (`effect.b2`) increased expression compared to another post-bifurcation branch and significant increase (p < 0.05) relative to progenitor branch:
 
@@ -123,11 +124,11 @@ For consistency with the original results, we also limit genes to `genes.tree` s
 ```r
 genes.sensory <- intersect(genes.sensory,genes.tree)
 str(genes.sensory)
-##  chr [1:98] "Rdh10" "Hes6" "Cxcr4" "Nfasc" "5730559C18Rik" "Zbtb18" ...
+##  chr [1:98] "Rdh10" "Hes6" "Cxcr4" "Nfasc" "5730559C18Rik" "Rgs16" ...
 
 genes.autonomic <- intersect(genes.autonomic,genes.tree)
 str(genes.autonomic)
-##  chr [1:126] "Speg" "Serpine2" "Lrrfip1" "Cdh19" "Ralb" "Angptl1" ...
+##  chr [1:122] "Serpine2" "Lrrfip1" "Cdh19" "Ralb" "Angptl1" "Pbx1" ...
 ```
 
 ## Classification of early and late modules
@@ -145,21 +146,21 @@ Branch-specific sets of genes (`genes.sensory` and `genes.autonomic`) can now be
 
 
 ```r
-fork.pt(r,root,leaves)
+fork.pt(ppt,root,leaves)
 ```
-
-
-```r
-knitr::kable(t(fork.pt(r,root,leaves)))
-```
-
 
 
 | root| bifurcation|  leave 1|  leave 2|
 |----:|-----------:|--------:|--------:|
 |    0|     17.5719| 27.59971| 31.49521|
 
-We use `cutoff = 16.0` on timing of activation to define early and late genes:
+We use `cutoff=16.0` on timing of activation to define early and late genes:
+
+
+```r
+cutoff <- 16.0
+```
+
 
 ```r
 genes.sensory.late <- genes.sensory[fork.de.act[genes.sensory,]$activation > cutoff]
@@ -178,10 +179,9 @@ cells <- rownames(ppt$cell.summary)[ppt$cell.summary$seg %in% extract.subtree(pp
 par(mfrow=c(1,2))
 plot(t(programs[c(1,3),cells]),col=ppt$cell.summary[cells,]$color,pch=19,cex=0.5)
 plot(t(programs[c(2,4),cells]),col=ppt$cell.summary[cells,]$color,pch=19,cex=0.5)
-## Error in plot.window(...): need finite 'xlim' values
 ```
 
-![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18-1.png)
+![plot of chunk unnamed-chunk-67](figure/unnamed-chunk-67-1.png)
 
 
 ## Coordination of fate biases
@@ -198,7 +198,7 @@ fig_cells <- fig.cells(emb,freq)
 marrangeGrob( c(fig_cells),ncol=length(fig_cells),nrow=1,top=NA)
 ```
 
-![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-20-1.png)
+![plot of chunk unnamed-chunk-69](figure/unnamed-chunk-69-1.png)
 
 Windows can be also selected manually, below we follow selection used in the paper:
 
@@ -213,7 +213,7 @@ fig_cells <- fig.cells(emb,freq)
 marrangeGrob( c(fig_cells),ncol=length(fig_cells),nrow=1,top=NA)
 ```
 
-![plot of chunk unnamed-chunk-22](figure/unnamed-chunk-22-1.png)
+![plot of chunk unnamed-chunk-71](figure/unnamed-chunk-71-1.png)
 
 Next, routine `slide.cors` estimates average correlation of each early fate-specific gene with both modules (`genes.sensory.early` and `genes.autonomic.early`) in each window of cells:
 
@@ -229,7 +229,7 @@ marrangeGrob( c(fig_cells,fig_cor),ncol=length(fig_cells),nrow=2,
               layout_matrix = matrix(seq_len(2*length(fig_cells)), nrow = 2, ncol = length(fig_cells),byrow=TRUE),top=NA)
 ```
 
-![plot of chunk unnamed-chunk-24](figure/unnamed-chunk-24-1.png)
+![plot of chunk unnamed-chunk-73](figure/unnamed-chunk-73-1.png)
   
 To obtain more contrasted (and reproducible with the paper) view, a set of early genes could be further cleaned up by removing fate-specific genes having low correlation with its modules around bifurcation point:
 
@@ -250,7 +250,7 @@ marrangeGrob( c(fig_cells,fig_cor),ncol=length(fig_cells),nrow=2,
               layout_matrix = matrix(seq_len(2*length(fig_cells)), nrow = 2, ncol = length(fig_cells),byrow=TRUE),top=NA)
 ```
 
-![plot of chunk unnamed-chunk-26](figure/unnamed-chunk-26-1.png)
+![plot of chunk unnamed-chunk-75](figure/unnamed-chunk-75-1.png)
 
 
 More generally, formal trends of local coordination of fate-specific modules along branching trajectories can be estimated using `synchro` routine:
@@ -267,7 +267,110 @@ And visualized:
 visualize.synchro(crd)
 ```
 
-![plot of chunk unnamed-chunk-28](figure/unnamed-chunk-28-1.png)
+![plot of chunk unnamed-chunk-77](figure/unnamed-chunk-77-1.png)
 
 
+
+## Formation of correlated module
+
+In order to infer genes orchestrating emergence of local intra-module correlations, we developed an iterative approach that estimates timing of genes inclusion in a core of correlated genes of the module. Routine `onset` estimates inclusion timing of early sensory genes `genes.sensory.early` for vector `mappings` of probabilistic cell projections:
+
+
+```r
+inclusion.sensory <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,mappings=1:100,do.perm=FALSE,winperm=30,n.cores=30,permut.n=10,n.cores1=1)
+```
+
+Average inclusion timing of each gene is
+
+```r
+head(apply(inclusion.sensory,1,mean))
+```
+
+
+As an example, predicted cumulative probability of gene *Pou4f1* inclusion is shown below:
+
+```r
+show.gene.inclusion("Pou4f1",inclusion.sensory)
+```
+
+![plot of chunk unnamed-chunk-80](figure/unnamed-chunk-80-1.png)
+
+Overall summary statistics of inclusion probabilistics is visualized using `show.inclusion.summary` routine with each arrow reflecting cumulative probability of a single gene (as in example above):
+
+```r
+show.inclusion.summary(inclusion.sensory,gns.show=c("Neurog2","Pou4f1"))
+```
+
+![plot of chunk unnamed-chunk-81](figure/unnamed-chunk-81-1.png)
+
+Analogous inference of inclusion timing for early atuonomic module `genes.autonomic.early`:
+
+```r
+inclusion.autonomic <- onset(ppt,geneset=genes.autonomic.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,mappings=1:100,do.perm=FALSE,winperm=30,n.cores=30,permut.n=10,n.cores1=1)
+
+show.inclusion.summary(inclusion.autonomic,gns.show = c("Mef2c","Pbx1"))
+```
+
+![plot of chunk unnamed-chunk-82](figure/unnamed-chunk-82-1.png)
+
+## Finding optimal parameter to regulate false positive
+
+For comparison, inclusion events are not detected in a control expression matrix, where expression levels were locally permuted using option `do.perm=TRUE` among `winperm=10` batches of cells along pseudotime:
+
+
+```r
+inclusion.sensory.control <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,
+                 mappings=1:10,do.perm=TRUE,winperm=10,n.cores=30,permut.n=10,n.cores1=1)
+show.inclusion.summary(inclusion.sensory.control,gns.show=NA)
+```
+
+![plot of chunk unnamed-chunk-83](figure/unnamed-chunk-83-1.png)
+
+
+Parameter `alp`, which was set to 20 in the analysis above, in routine `onset` regulates stringency of inclusion point detection. Assessing summary statistics on inclusion times for a range of `alp` levels for real and permutated expression profiles enables selection of optimal `alp`. First, select a range of `alp` levels:
+
+
+```r
+alps <- seq(1,40,length.out = 10)
+```
+
+Then estimate mean gene inclusion time for `alps` levels:
+
+```r
+incl.real <- unlist(lapply(alps,function(alp){
+  cat(alp);cat('\n')
+  res.est <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=alp,w=40,step=10,n.cells=280, mappings=1:10,do.perm=FALSE,winperm=10,n.cores=30,permut.n=10,n.cores1=1)
+  return(mean(res.est))
+}))
+```
+
+Output is average inclusion time for each alp level:
+
+
+```r
+head(incl.real)
+## [1]  8.084946  9.992680 11.265330 12.104221 12.434657 13.042614
+```
+
+Estimate inclusion time for locally permuted expression levels by setting `do.perm=TRUE` and local permutation window `winperm=10`:
+
+
+```r
+incl.perm <- unlist(lapply( alps,function(alp){
+  cat(alp);cat('\n')
+  res.est <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=alp,w=40,step=10,n.cells=280, mappings=1:10,do.perm=TRUE,winperm=30,n.cores=30,permut.n=10,n.cores1=1)
+  mean(res.est)
+}))
+```
+
+Comparison of early cuulative inclusion timing for real and control expression levels:
+
+
+```r
+inclusion.stat(alps, incl.real, incl.perm)
+```
+
+![plot of chunk unnamed-chunk-88](figure/unnamed-chunk-88-1.png)
+
+From that one can see that if `alp > 10` than overall false positive rate in permutations is close to zero, while detection sensitivity of real data gradually declines.
 
