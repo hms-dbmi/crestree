@@ -1,4 +1,4 @@
-# Analysis of bifurcation points"
+# Analysis of bifurcation points
 
 
 
