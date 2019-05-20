@@ -1,15 +1,4 @@
----
-title: "Analysis of bifurcation points"
-#author: "Ruslan Soldatov"
-#date: "2019-05-20"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{Analysis of bifurcation points}
----
-
-
+# Analysis of bifurcation points
 
 This vignette describes analysis of individual bifurcation points based on a reconstructed transcriptional tree. As example, it explores bifurcation point between sensory and autonomic nervous systems in neural crest. The guideline starts with tree reconstruction, identifies fate-specific genes and estimates timing of their activation, assess existence and formation of fate-biases, and predicts time of genes inclusion in fate-biased phase.
 
@@ -67,7 +56,7 @@ Bifurcation point is charactarized by a progenitor and derivative branches.
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
 
-![plot of chunk unnamed-chunk-32](figure/unnamed-chunk-32-1.png)
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png)
 
 We thus start with selection a root of progenitor branch (355) and two leaves of derivative branches (165 and 91):
 
@@ -83,56 +72,54 @@ subtree <- extract.subtree(ppt,c(root,leaves))
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.3,lwd.tree = 3,subtree=subtree)
 ```
 
-![plot of chunk unnamed-chunk-34](figure/unnamed-chunk-34-1.png)
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13-1.png)
 
 A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
 
 ```r
 fork.de <- test.fork.genes(ppt,fpm,root=root,leaves=leaves,n.mapping = 10)
-## Error in dimnames(x) <- dn: length of 'dimnames' [1] not equal to array extent
 ```
 
 A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` (`pd2.a`) and p-value `pd1.p` (`pd2.p`) of expression changes from first (second) derivative branch to progenitor branch:
 
 ```r
 head(fork.de[order(fork.de$p),],)
-## Error in head(fork.de[order(fork.de$p), ], ): object 'fork.de' not found
 ```
 
 
-```
-## Error in head(fork.de[order(fork.de$p), ], ): object 'fork.de' not found
-```
+|        |    effect|  p| fdr|  st| stf|     pd1.a| pd1.p|      pd2.a|     pd2.p|
+|:-------|---------:|--:|---:|---:|---:|---------:|-----:|----------:|---------:|
+|Neurog2 | 1.9032796|  0|   0| 0.9| 0.9| 0.1012255|     0| -0.0262510| 0.0001858|
+|Dll1    | 1.4404789|  0|   0| 1.0| 1.0| 0.0976255|     0|  0.0043581| 0.3941055|
+|Srrm4   | 0.8383684|  0|   0| 1.0| 1.0| 0.0646809|     0|  0.0099734| 0.0002647|
+|Mfng    | 0.9532576|  0|   0| 1.0| 1.0| 0.0630761|     0|  0.0034360| 0.4424417|
+|Eya2    | 1.0311280|  0|   0| 0.9| 0.9| 0.0737302|     0|  0.0082446| 0.0035890|
+|Pcdh8   | 1.1417276|  0|   0| 1.0| 0.9| 0.0515220|     0| -0.0193619| 0.0000199|
 
 We next consider a gene to be preferentially expressed along the first (second) branch if it has `effect.b1` (`effect.b2`) increased expression compared to another post-bifurcation branch and significant increase (p < 0.05) relative to progenitor branch:
 
 
 ```r
 fork.de <- branch.specific.genes(fork.de,effect.b1 = 0.1,effect.b2 = 0.3)
-## Error in branch.specific.genes(fork.de, effect.b1 = 0.1, effect.b2 = 0.3): object 'fork.de' not found
 ```
 
 Column `state` characterizes genes that are specific to first (1), second (2), or neither (0) of derivative branches.
 
 ```r
 genes.sensory <- rownames(fork.de)[fork.de$state==1]
-## Error in rownames(fork.de): object 'fork.de' not found
 genes.autonomic  <- rownames(fork.de)[fork.de$state==2]
-## Error in rownames(fork.de): object 'fork.de' not found
 ```
 
 For consistency with the original results, we also limit genes to `genes.tree` set associated with the tree:
 
 ```r
 genes.sensory <- intersect(genes.sensory,genes.tree)
-## Error in intersect(genes.sensory, genes.tree): object 'genes.sensory' not found
 str(genes.sensory)
-## Error in str(genes.sensory): object 'genes.sensory' not found
+##  chr [1:98] "Rdh10" "Hes6" "Cxcr4" "Nfasc" "5730559C18Rik" "Rgs16" "Nhlh1" "Zbtb18" "Utrn" "Gamt" "Neurod4" "Upp1" ...
 
 genes.autonomic <- intersect(genes.autonomic,genes.tree)
-## Error in intersect(genes.autonomic, genes.tree): object 'genes.autonomic' not found
 str(genes.autonomic)
-## Error in str(genes.autonomic): object 'genes.autonomic' not found
+##  chr [1:122] "Serpine2" "Lrrfip1" "Cdh19" "Ralb" "Angptl1" "Pbx1" "Mpz" "Lama4" "Cnn2" "Timp3" "Ascl1" "Elk3" ...
 ```
 
 ## Classification of early and late modules
@@ -142,7 +129,6 @@ Dynamics of gene expression is reflected in timing of activation and expression 
 
 ```r
 fork.de.act <- activation.fork(ppt,fork.de,fpm,root,leaves,deriv.cutoff = 0.015,n.mapping=10)
-## Error in rownames(fork.de): object 'fork.de' not found
 ```
 
 `fork.de.act` table provides additional columns `optimum` and `activation` for genes predicted to be differentially expressed (`stat` = 1 or 2).
@@ -169,32 +155,24 @@ cutoff <- 16.0
 
 ```r
 genes.sensory.late <- genes.sensory[fork.de.act[genes.sensory,]$activation > cutoff]
-## Error in eval(expr, envir, enclos): object 'genes.sensory' not found
 genes.sensory.early <- setdiff(genes.sensory,genes.sensory.late)
-## Error in setdiff(genes.sensory, genes.sensory.late): object 'genes.sensory' not found
 
 genes.autonomic.late <- genes.autonomic[fork.de.act[genes.autonomic,]$activation > cutoff]
-## Error in eval(expr, envir, enclos): object 'genes.autonomic' not found
 genes.autonomic.early <- setdiff(genes.autonomic,genes.autonomic.late)
-## Error in setdiff(genes.autonomic, genes.autonomic.late): object 'genes.autonomic' not found
 ```
 
 Now we can check if early/late genes modules follow co-activation or mutually-exclusive patterns:
 
-```
-## Error in apply(fpm[genes.sensory.early, ], 2, mean): object 'genes.sensory.early' not found
-## Error in rownames(programs) = c("early sensory", "late sensory", "early autonomic", : object 'programs' not found
-```
 
 
 ```r
 cells <- rownames(ppt$cell.summary)[ppt$cell.summary$seg %in% extract.subtree(ppt,c(root,leaves))$segs]
 par(mfrow=c(1,2))
 plot(t(programs[c(1,3),cells]),col=ppt$cell.summary[cells,]$color,pch=19,cex=0.5)
-## Error in t(programs[c(1, 3), cells]): object 'programs' not found
 plot(t(programs[c(2,4),cells]),col=ppt$cell.summary[cells,]$color,pch=19,cex=0.5)
-## Error in t(programs[c(2, 4), cells]): object 'programs' not found
 ```
+
+![plot of chunk unnamed-chunk-26](figure/unnamed-chunk-26-1.png)
 
 
 ## Coordination of fate biases
@@ -211,7 +189,7 @@ fig_cells <- fig.cells(emb,freq)
 marrangeGrob( c(fig_cells),ncol=length(fig_cells),nrow=1,top=NA)
 ```
 
-![plot of chunk unnamed-chunk-49](figure/unnamed-chunk-49-1.png)
+![plot of chunk unnamed-chunk-28](figure/unnamed-chunk-28-1.png)
 
 Windows can be also selected manually, below we follow selection used in the paper:
 
@@ -226,50 +204,44 @@ fig_cells <- fig.cells(emb,freq)
 marrangeGrob( c(fig_cells),ncol=length(fig_cells),nrow=1,top=NA)
 ```
 
-![plot of chunk unnamed-chunk-51](figure/unnamed-chunk-51-1.png)
+![plot of chunk unnamed-chunk-30](figure/unnamed-chunk-30-1.png)
 
 Next, routine `slide.cors` estimates average correlation of each early fate-specific gene with both modules (`genes.sensory.early` and `genes.autonomic.early`) in each window of cells:
 
 ```r
 cors <- slide.cors(freq,fpm,genes.sensory.early,genes.autonomic.early)
-## Error in apply(mat[c(genesetA, genesetB), ], 1, function(x) rank(x)): object 'genes.sensory.early' not found
 ```
 
 Now joint visualization enables tracking how genes of fate-specific modules coordinate expression during progression along pseudotime:
 
 ```r
 fig_cor <- fig.cors(cors,genes.sensory.early,genes.autonomic.early)
-## Error in lapply(cors, function(corc) as.vector(corc)): object 'cors' not found
 marrangeGrob( c(fig_cells,fig_cor),ncol=length(fig_cells),nrow=2,
               layout_matrix = matrix(seq_len(2*length(fig_cells)), nrow = 2, ncol = length(fig_cells),byrow=TRUE),top=NA)
-## Error in marrangeGrob(c(fig_cells, fig_cor), ncol = length(fig_cells), : object 'fig_cor' not found
 ```
+
+![plot of chunk unnamed-chunk-32](figure/unnamed-chunk-32-1.png)
   
 To obtain more contrasted (and reproducible with the paper) view, a set of early genes could be further cleaned up by removing fate-specific genes having low correlation with its modules around bifurcation point:
 
 ```r
 corA <- cors[[5]][,1]
-## Error in eval(expr, envir, enclos): object 'cors' not found
 genesetA <- names(which(corA[genes.sensory.early] > 0.07))
-## Error in which(corA[genes.sensory.early] > 0.07): object 'corA' not found
 
 corB <- cors[[5]][,2]
-## Error in eval(expr, envir, enclos): object 'cors' not found
 genesetB <- names(which(corB[genes.autonomic.early] > 0.07))
-## Error in which(corB[genes.autonomic.early] > 0.07): object 'corB' not found
 ```
 
 Re-estimation average window-specific correlations for cleaned up sets of genes `genesetA` and `genesetB`:
 
 ```r
 cors <- slide.cors(freq,fpm,genesetA,genesetB)
-## Error in apply(mat[c(genesetA, genesetB), ], 1, function(x) rank(x)): object 'genesetA' not found
 fig_cor <- fig.cors(cors,genesetA,genesetB)
-## Error in lapply(cors, function(corc) as.vector(corc)): object 'cors' not found
 marrangeGrob( c(fig_cells,fig_cor),ncol=length(fig_cells),nrow=2,
               layout_matrix = matrix(seq_len(2*length(fig_cells)), nrow = 2, ncol = length(fig_cells),byrow=TRUE),top=NA)
-## Error in marrangeGrob(c(fig_cells, fig_cor), ncol = length(fig_cells), : object 'fig_cor' not found
 ```
+
+![plot of chunk unnamed-chunk-34](figure/unnamed-chunk-34-1.png)
 
 
 More generally, formal trends of local coordination of fate-specific modules along branching trajectories can be estimated using `synchro` routine:
@@ -279,14 +251,14 @@ More generally, formal trends of local coordination of fate-specific modules alo
 w=30
 step=10
 crd <- synchro(ppt,fpm,root,leaves,genesetA,genesetB,w,step,n.mapping=100,n.points = 300,span.smooth = 0.1,perm=FALSE)
-## Error in t(texpr1[c(genesetA, genesetB), cls]): object 'genesetA' not found
 ```
 And visualized:
 
 ```r
 visualize.synchro(crd)
-## Error in visualize.synchro(crd): object 'crd' not found
 ```
+
+![plot of chunk unnamed-chunk-36](figure/unnamed-chunk-36-1.png)
 
 
 
@@ -303,7 +275,8 @@ Average inclusion timing of each gene is
 
 ```r
 head(apply(inclusion.sensory,1,mean))
-## [1] NA
+##         Rdh10          Hes6         Cxcr4 5730559C18Rik          Utrn          Gamt 
+##      11.08199      12.97442      15.67575      12.01563      13.08833      15.35606
 ```
 
 
@@ -311,15 +284,17 @@ As an example, predicted cumulative probability of gene *Pou4f1* inclusion is sh
 
 ```r
 show.gene.inclusion("Pou4f1",inclusion.sensory)
-## Error in show.gene.inclusion("Pou4f1", inclusion.sensory): gene is not in matrix
 ```
+
+![plot of chunk unnamed-chunk-39](figure/unnamed-chunk-39-1.png)
 
 Overall summary statistics of inclusion probabilistics is visualized using `show.inclusion.summary` routine with each row of the heatmap reflecting cumulative inclusion probability of a single gene (as in example above):
 
 ```r
 show.inclusion.summary(inclusion.sensory,gns.show=c("Neurog2","Pou4f1"))
-## Error in seq.default(0, max(matSwitch), (max(matSwitch))/bins): 'to' must be a finite number
 ```
+
+![plot of chunk unnamed-chunk-40](figure/unnamed-chunk-40-1.png)
 
 Analogous inference of inclusion timing for early atuonomic module `genes.autonomic.early`:
 
@@ -327,8 +302,9 @@ Analogous inference of inclusion timing for early atuonomic module `genes.autono
 inclusion.autonomic <- onset(ppt,geneset=genes.autonomic.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,mappings=1:100,do.perm=FALSE,winperm=30,permut.n=10)
 
 show.inclusion.summary(inclusion.autonomic,gns.show = c("Mef2c","Pbx1"))
-## Error in seq.default(0, max(matSwitch), (max(matSwitch))/bins): 'to' must be a finite number
 ```
+
+![plot of chunk unnamed-chunk-41](figure/unnamed-chunk-41-1.png)
 
 ## Finding optimal parameter to regulate false positive
 
@@ -339,8 +315,9 @@ For comparison, inclusion events are not detected in a control expression matrix
 inclusion.sensory.control <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,
                  mappings=1:10,do.perm=TRUE,winperm=10,permut.n=10)
 show.inclusion.summary(inclusion.sensory.control,gns.show=NA)
-## Error in seq.default(0, max(matSwitch), (max(matSwitch))/bins): 'to' must be a finite number
 ```
+
+![plot of chunk unnamed-chunk-42](figure/unnamed-chunk-42-1.png)
 
 
 Parameter `alp` in routine `onset`, which was set to 20 in the analysis above, regulates stringency of inclusion point detection. Assessing summary statistics on inclusion times for a range of `alp` levels for real and permutated expression profiles enables selection of optimal `alp`. First, select a range of `alp` levels:
@@ -365,7 +342,7 @@ Output is average inclusion time for each alp level:
 
 ```r
 head(incl.real)
-## [1] NA NA NA NA NA NA
+## [1]  8.137490  9.916677 11.244118 11.996381 12.592830 13.203767
 ```
 
 Estimate inclusion time for locally permuted expression levels by setting `do.perm=TRUE` and local permutation window `winperm=10`:
@@ -384,10 +361,9 @@ Comparison of early inclusion timing among all genes for real and control expres
 
 ```r
 inclusion.stat(alps, incl.real, incl.perm)
-## Error in plot.window(...): need finite 'ylim' values
 ```
 
-![plot of chunk unnamed-chunk-68](figure/unnamed-chunk-68-1.png)
+![plot of chunk unnamed-chunk-47](figure/unnamed-chunk-47-1.png)
 
 From that one can see that if `alp > 10` than overall false positive rate in permutations is close to zero, while detection sensitivity of real data gradually declines.
 

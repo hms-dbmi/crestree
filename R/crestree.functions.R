@@ -1101,7 +1101,7 @@ visualise.clusters <-function(r,emb,clust=NA,clust.n=5,n.best=4,best.method="cor
 ##' @param leaves vector of two principal points of fork leaves
 ##' @param genes optional set of genes to estimate association with fork
 ##' @param n.mapping number of probabilistic cell-to-tree projections to use for robustness
-##' @param n.mapping number of probabilistic cell-to-tree projections to estimate the amount of upregulation relative to progenitor branch
+##' @param n.mapping.up number of probabilistic cell-to-tree projections to estimate the amount of upregulation relative to progenitor branch
 ##' @return summary statistics of size effect and p-value of association with bifurcaiton fork.
 ##' @export
 test.fork.genes <- function(r,mat,matw=NULL,root,leaves,genes=rownames(mat),n.mapping=1,n.mapping.up=1,n.cores=parallel::detectCores()/2) {
