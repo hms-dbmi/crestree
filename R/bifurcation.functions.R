@@ -8,7 +8,7 @@
 ##' @param n.cores number of cores to use
 ##' @return a list of cell probabilisties of being in each local pseudotime window
 ##' @export
-slide.cells <- function(r,root,leaves,wind=50,mapping=TRUE,regions=NULL,n.cores=10){
+slide.cells <- function(r,root,leaves,wind=50,mapping=TRUE,regions=NULL,n.cores=parallel::detectCores()/2){
   segs <- extract.subtree(r,c(root,leaves))
   if (is.null(regions)){
     segs.prog <- intersect(extract.subtree(r,c(root,leaves[1]))$segs,extract.subtree(r,c(root,leaves[2]))$segs)
@@ -312,14 +312,14 @@ visualize.synchro <- function(crd){
 ##' @param n.cores1 number of cores to calculate permutations used to estimate background local correlations in onset.est
 ##' @return matrix of inclusion timing for each gene (rows) in each probabilistic cells projection (columns)
 ##' @export
-onset =  function(ppt,geneset,nodes=NULL,expr,alp=20,w=40,step=10,n.cells=280,mappings=1,do.perm=FALSE,winperm=w,n.cores=1,permut.n=10,n.cores1=1){
+onset =  function(ppt,geneset,nodes=NULL,expr,alp=20,w=40,step=10,n.cells=280,mappings=1,do.perm=FALSE,winperm=w,n.cores=parallel::detectCores()/2,permut.n=10,n.cores1=1){
   if (is.null(nodes)){nodes <- ppt$tips}
-  res <- do.call(cbind,mclapply(mappings, function(perm){
-    cat("mapping: ");cat(perm);cat("\n")
+  res <- do.call(cbind,pbapply::pblapply(mappings, function(perm){
+    #cat("mapping: ");cat(perm);cat("\n")
     res <- onset.est(ppt,perm,geneset,nodes,expr,alp=alp,w=w,step=step,do.perm=do.perm,winperm=winperm,n.cells=n.cells,
                      permut.n=permut.n,n.cores=n.cores1)
     return(res)
-  },mc.cores = n.cores))
+  },cl=n.cores))
 }
 
 
@@ -429,7 +429,7 @@ corMatrix = function(genes,cells,cdnormX,step,w){
 ##' @param n.cores number of cores to use
 ##' @return local multiple permuted gene-gene correlation matrices per each window of cells
 ##' @export
-corMatrixC = function(genes,cells,cdnormX,step,w,permutN,n.cores){
+corMatrixC = function(genes,cells,cdnormX,step,w,permutN,n.cores=parallel::detectCores()/2){
   corMat = mclapply( seq(1,(length(cells)-w),step),function(wind){
     cls0 = cells[wind:min(wind+w-1,length(cells))]
     lapply(1:permutN, function(i){

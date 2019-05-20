@@ -28,6 +28,7 @@ library(pcaMethods)
 library(Rcpp) 
 library(inline) 
 library(RcppArmadillo) 
+library(pbapply)
 
 library(crestree)
 ```
@@ -73,7 +74,7 @@ str(wgm)
 
 wgwm <- crest$wgwm # matrix of expression weights
 ```
-Of note, matrices contain only 1169 the most over-dispersed genes. Alternatively, we can upload the full matrix from a web server:
+Of note, matrices contain only 1169 the most over-dispersed genes. Alternatively, we can upload the full matrix from a web server (it can take some time):
 ```{r}
 fpm <- read.table("http://pklab.med.harvard.edu/ruslan/neural_crest/fpm.txt",header=TRUE)
 fpm <- as.matrix(fpm)
@@ -102,7 +103,7 @@ The reconstructed tree `z`, that is modeled in high-dimensional expression space
 plotppt(z,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 ```
 
-We next switch to expression matrix `wgm` with weights `wgmw` used in the paper. Of note, optimal tree parameters `lambda` and `sigma` are sensitive to the data properties, such as dataset size or choice of expression matrices. In section **"Selection of optimal tree parameters"** we discuss a strategy of parameters selection and suggest two guiding routines. Below the tree is modeled and visualized with a new choice of expression matrices:
+We next switch to expression matrix `wgm` with weights `wgmw` used in the paper. Of note, optimal tree parameters `lambda` and `sigma` are sensitive to the data properties, such as dataset size or choice of expression matrices. In section ["Selection of optimal tree parameters"](#Selection-of-optimal-tree-parameters) we discuss a strategy of parameters selection and suggest two guiding routines. Below the tree is modeled and visualized with a new choice of expression matrices:
 ```{r, warning = FALSE, message = FALSE, results = "hide",fig.width = 3, fig.height = 3}
 lambda <- 250
 sigma <- 0.04
@@ -116,7 +117,7 @@ plotppt(ppt,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 Optionally, stable properties of the tree can be assessed using sampling of cells. Below we generate 20 trees through subsampling of 90% of cells without replacement:  
 ```{r}
 ppt_ensemble <- bootstrap.ppt(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, metrics=metrics, M=as.integer(length(nc.cells)*0.9), lambda=lambda, sigma=sigma, plot=FALSE,
-                             n.samples=20,n.cores=20, seed=NULL,replace=FALSE)
+                             n.samples=20, seed=NULL,replace=FALSE)
 ```
 
 Sampling of trees can be visualized on embedding using routing `plotpptl`:
@@ -164,7 +165,7 @@ ppt <- project.cells.onto.ppt(ppt,emb,n.mapping = 100)
 ## Analysis of tree-associated genes
 We are ready to study gene expression patterns along the tree. The first step is to identify genes that have expression levels significantly varied along the tree (tree-associated genes). Routine `test.associated.genes` estimates significance of each gene's association with the tree using an input expression matrix, e.g. `fpm`:
 ```{r,warning = FALSE, message = FALSE, results = "hide", fig.width = 3, fig.height = 3}
-ppt <- test.associated.genes(ppt,n.map=1,n.cores = 20,fpm,summary=TRUE)
+ppt <- test.associated.genes(ppt,n.map=1,fpm,summary=TRUE)
 ```
 
 A field `stat.association` of `ppt` provides summary statistics of genes association, including amplitude of changes along the tree  `A`, p-value `pval`, B-H adjustment for multiple testing `fdr` and binary classification `sign` of differential expression along the tree. Also, robustness of differential expression is estimated as a fraction `st` of probabilistic projections (if `n.mappings` > 1 in project.cells.onto.ppt) when a gene was detected as differentially expressed.
@@ -187,7 +188,7 @@ ppt$stat.association[genes.tree,]$sign <- TRUE
 
 Now expression levels of differentially expressed genes can be modeled as a function of pseudotime along the tree. 
 ```{r,warning = FALSE, message = FALSE}
-ppt <- fit.associated.genes(ppt,fpm,n.map=1,n.cores=20)
+ppt <- fit.associated.genes(ppt,fpm,n.map=1)
 ```
 
 There are different ways to visualize expression trends of a gene along the tree. For example, as a function of pseudotime:
@@ -273,7 +274,7 @@ leaves <- c(165,91)
 
 A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
 ```{r,results="hide"}
-fork.de <- test.fork.genes(ppt,fpm[,],root=root,leaves=leaves,n.mapping = 1,n.cores=30)
+fork.de <- test.fork.genes(ppt,fpm[,],root=root,leaves=leaves,n.mapping = 1)
 ```
 
 A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` and p-value `pd1.p` of expression changes from derivative branch 1 to progenitor branch:
@@ -285,7 +286,7 @@ head(fork.de[order(fork.de$p),],)
 knitr::kable(head(fork.de[order(fork.de$p),],))
 ```
 
-Detailed analysis of bifurcation point is described in https://github.com/hms-dbmi/crestree/blob/master/vignettes/bifurcation_point.md
+See manual [analysis of bifurcation point](https://github.com/hms-dbmi/crestree/blob/master/vignettes/bifurcation_point.md) for detailed analysis.
 
 ## Selection of optimal tree parameters
 Choice of parameters `sigma` and `lambda` for tree reconstruction is of crucial importance. We suggest a combination of formal criteria and exploratory analysis for selection of parameters. First, parameter `sigma` is selected as an optimum of cross validation upon `lambda`=0:

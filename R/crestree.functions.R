@@ -6,7 +6,7 @@ NULL
 ##' @param seeds a vector of seeds to use. Overwrites n.samples.
 ##' @return a list of pptree objects
 ##' @export
-mppt.tree <- function( ... , n.cores=30,n.samples=n.cores, seed=NULL,seeds=NULL) {
+mppt.tree <- function( ... , n.cores=parallel::detectCores()/2,n.samples=n.cores, seed=NULL,seeds=NULL) {
   if(!is.null(seed)) {
     set.seed(seed);
   }
@@ -24,7 +24,7 @@ mppt.tree <- function( ... , n.cores=30,n.samples=n.cores, seed=NULL,seeds=NULL)
 ##' @param replace sampling with replacement (logical).
 ##' @return a list of pptree objects
 ##' @export
-bootstrap.ppt <- function( ..., X, M=ncol(X),n.cores=20,n.samples=n.cores, seed=NULL,replace=T) {
+bootstrap.ppt <- function( ..., X, M=ncol(X),n.cores=parallel::detectCores()/2,n.samples=n.cores, seed=NULL,replace=T) {
   if(!is.null(seed)) {
     set.seed(seed);
   }
@@ -533,8 +533,8 @@ project.cells.onto.ppt <- function(r,emb=NULL,n.mapping=1) {
 
   g <- graph.adjacency(r$B,weighted=TRUE,mode="undirected")
 
-  df.list <- lapply(1:n.mapping,function(nm){
-    print(paste("mapping",nm))
+  df.list <- pblapply(1:n.mapping,function(nm){
+    #print(paste("mapping",nm))
     # assign nearest principal point for each cell
     if (nm > 1){
       rrm = apply(r$R,1,function(v){sample(1:length(v),size=1,prob=v/sum(v))})
@@ -580,7 +580,7 @@ project.cells.onto.ppt <- function(r,emb=NULL,n.mapping=1) {
   })
 
   # generate graph of cells and PPs for each mapping
-  img.list <- lapply(df.list,function(df){
+  img.list <- pblapply(df.list,function(df){
     img <- g#graph.adjacency(r$B,weighted=TRUE,mode="undirected")
     img <- set.vertex.attribute(img,"type",value="pp")
     for(e in unique(df$edge)){
@@ -637,7 +637,7 @@ project.cells.onto.ppt <- function(r,emb=NULL,n.mapping=1) {
 ##' @param fdr.method a method to adjust for multiple testing. Default - Bonferroni. Alternatively, "BH" can be used.
 ##' @return modified pptree object with a new field r$stat.association that includes pvalue, amplitude, fdr, stability and siginificane (TRUE/FALSE) of gene associations
 ##' @export
-test.associated.genes <- function(r,X,n.map=1,n.cores=20,spline.df=3,fdr.cut=1e-4,A.cut=1,st.cut=0.8,summary=FALSE,subtree=NA,fdr.method=NULL, ...) {
+test.associated.genes <- function(r,X,n.map=1,n.cores=parallel::detectCores()/2,spline.df=3,fdr.cut=1e-4,A.cut=1,st.cut=0.8,summary=FALSE,subtree=NA,fdr.method=NULL, ...) {
   if (is.null(r$root)) {stop("assign root first")}
   if (is.null(r$cell.summary) | is.null(r$cell.info)) {stop("project cells onto the tree first")}
   X <- X[,intersect(colnames(X),rownames(r$cell.summary))]
@@ -717,7 +717,7 @@ test.associated.genes <- function(r,X,n.map=1,n.cores=20,spline.df=3,fdr.cut=1e-
 ##' @param gamma stringency of penalty.
 ##' @return modified pptree object with new fields r$fit.list, r$fit.summary and r$fit.pattern. r$fit.pattern contains matrix of fitted gene expression levels
 ##' @export
-fit.associated.genes <- function(r,X,n.map=1,n.cores=20,method="ts",knn=1,gamma=1.5) {
+fit.associated.genes <- function(r,X,n.map=1,n.cores=parallel::detectCores()/2,method="ts",knn=1,gamma=1.5) {
   if (is.null(r$root)) {stop("assign root first")}
   if (is.null(r$cell.summary) | is.null(r$cell.info)) {stop("project cells onto the tree first")}
   X <- X[,intersect(colnames(X),rownames(r$cell.summary))]
@@ -773,7 +773,7 @@ fit.associated.genes <- function(r,X,n.map=1,n.cores=20,method="ts",knn=1,gamma=
 ##' @param gamma stringency of penalty.
 ##' @return matrix of fitted gene expression levels to the tree
 ##' @export
-fit.ts <- function(r,X,n.map,n.cores,gamma=1.5,knn=1) {
+fit.ts <- function(r,X,n.map,n.cores=parallel::detectCores()/2,gamma=1.5,knn=1) {
   ix <- 1
   img = r$img.list[[ix]];
   root = r$root
@@ -845,7 +845,7 @@ fit.ts <- function(r,X,n.map,n.cores,gamma=1.5,knn=1) {
 ##' @param cutoff expression in local optimum should be higher/lower than both terminal branch values by cutoff.
 ##' @return vector of predicted classification for fitted genes.
 ##' @export
-classify.genes <- function(r,n.cores=20,cutoff=0.2) {
+classify.genes <- function(r,n.cores=parallel::detectCores()/2,cutoff=0.2) {
   if (is.null(r$fit.summary)) {stop("fit gene expression to the tree first")}
   a <- do.call(cbind,lapply(unique(r$cell.summary$seg),function(seg){
     seg.summary <- r$cell.summary[r$cell.summary$seg==seg,]
@@ -1104,7 +1104,7 @@ visualise.clusters <-function(r,emb,clust=NA,clust.n=5,n.best=4,best.method="cor
 ##' @param n.mapping number of probabilistic cell-to-tree projections to estimate the amount of upregulation relative to progenitor branch
 ##' @return summary statistics of size effect and p-value of association with bifurcaiton fork.
 ##' @export
-test.fork.genes <- function(r,mat,matw=NULL,root,leaves,genes=rownames(mat),n.mapping=1,n.mapping.up=1,n.cores=30) {
+test.fork.genes <- function(r,mat,matw=NULL,root,leaves,genes=rownames(mat),n.mapping=1,n.mapping.up=1,n.cores=parallel::detectCores()/2) {
   g <- graph.adjacency(r$B>0,mode="undirected")
   vpath = get.shortest.paths(g,root,leaves)
   interPP = intersection(vpath$vpath[[1]],vpath$vpath[[2]])
@@ -1207,7 +1207,7 @@ branch.specific.genes <- function(fork.de,stf.cut = 0.7, effect.b1 = 0.1,effect.
 ##' @param n.cores number of cores to use
 ##' @return per gene timing of optimum and activation
 ##' @export
-activation.statistics <- function(r,mat,root,leave,genes=rownames(mat),deriv.cutoff = 0.015,gamma=1,n.mapping=1,n.cores=10){
+activation.statistics <- function(r,mat,root,leave,genes=rownames(mat),deriv.cutoff = 0.015,gamma=1,n.mapping=1,n.cores=parallel::detectCores()/2){
   xx = do.call(rbind,(mclapply(genes,function(gene){
     gres <- do.call(rbind,lapply(1:n.mapping,function(i){
       segs = extract.subtree(ppt,c(root,leave))
@@ -1244,7 +1244,7 @@ activation.statistics <- function(r,mat,root,leave,genes=rownames(mat),deriv.cut
 ##' @param n.cores number of cores to use
 ##' @return table fork.de with added per gene timing of optimum and activation
 ##' @export
-activation.fork <- function(r,fork.de,mat,root,leaves,deriv.cutoff = 0.015,gamma=1,n.mapping=1,n.cores=10){
+activation.fork <- function(r,fork.de,mat,root,leaves,deriv.cutoff = 0.015,gamma=1,n.mapping=1,n.cores=parallel::detectCores()/2){
   cat("estimate activation patterns .. branch 1"); cat("\n")
   gg1 <- rownames(fork.de)[fork.de$state==1]
   act1 <- activation.statistics(r,mat,root,leaves[1],genes=gg1,deriv.cutoff = deriv.cutoff,gamma=gamma,n.mapping=n.mapping,n.cores=n.cores)

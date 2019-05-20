@@ -28,6 +28,7 @@ library(pcaMethods)
 library(Rcpp) 
 library(inline) 
 library(RcppArmadillo) 
+library(pbapply)
 library(crestree)
 library(ggplot2); library(gridExtra); library(grid);
 
@@ -43,7 +44,8 @@ genes.tree <- crest$genes.tree
 ```
   
 ## Run tree reconstruction
-The detailed guide for tree reconstruction is described in https://github.com/hms-dbmi/crestree/blob/master/vignettes/tree_guide.md. The tree can be either manually reconstructed:
+See manual [the guide for tree reconstruction](https://github.com/hms-dbmi/crestree/blob/master/vignettes/tree_guide.md) for detailed instructions. The tree can be either manually reconstructed:
+
 ```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 3, fig.height = 3}
 M <- length(nc.cells); 
 lambda <- 250; 
@@ -80,7 +82,7 @@ plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.3,lwd.tree = 3,subtree=subtre
 
 A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
 ```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 3, fig.height = 3}
-fork.de <- test.fork.genes(ppt,fpm,root=root,leaves=leaves,n.mapping = 10,n.cores=30)
+fork.de <- test.fork.genes(ppt,fpm,root=root,leaves=leaves,n.mapping = 10)
 ```
 
 A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` (`pd2.a`) and p-value `pd1.p` (`pd2.p`) of expression changes from first (second) derivative branch to progenitor branch:
@@ -118,7 +120,7 @@ str(genes.autonomic)
 Dynamics of gene expression is reflected in timing of activation and expression optimum. Routine `activation.fork` estimates timing of optimum expression of smoothed expression and activation point as a first passage of derivative through `deriv.cutoff` cutoff:
 
 ```{r,warning = FALSE, message = FALSE, results='hide'}
-fork.de.act <- activation.fork(ppt,fork.de,fpm,root,leaves,deriv.cutoff = 0.015,n.mapping=10,n.cores=10)
+fork.de.act <- activation.fork(ppt,fork.de,fpm,root,leaves,deriv.cutoff = 0.015,n.mapping=10)
 ```
 
 `fork.de.act` table provides additional columns `optimum` and `activation` for genes predicted to be differentially expressed (`stat` = 1 or 2).
@@ -166,7 +168,7 @@ plot(t(programs[c(2,4),cells]),col=ppt$cell.summary[cells,]$color,pch=19,cex=0.5
 
 Co-activation of both fate-specific programs poses a question of when cell acquire bias in favor of one or another program. For that, we look for coordinated expression of each module inside more homogeneous subpopulations. First, bifurcation fork is partitioned in non-intersecting windows of `wind` cells:
 ```{r, results='asis'}
-freq <- slide.cells(ppt,root,leaves,wind=50,n.cores=10)
+freq <- slide.cells(ppt,root,leaves,wind=50)
 ```
 Visualization of group of cells assigned to each non-intersecting window:
 ```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 10, fig.height = 1}
@@ -180,7 +182,7 @@ regions = list( list(7,151,200,1),list(7,101,151,1),list(7,51,100,1),list(7,1,50
 ```
 
 ```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 8, fig.height = 1}
-freq <- slide.cells(ppt,root,leaves,wind=50,regions=regions,n.cores=10)
+freq <- slide.cells(ppt,root,leaves,wind=50,regions=regions)
 fig_cells <- fig.cells(emb,freq)
 marrangeGrob( c(fig_cells),ncol=length(fig_cells),nrow=1,top=NA)
 ```
@@ -234,7 +236,7 @@ visualize.synchro(crd)
 In order to infer genes orchestrating emergence of local intra-module correlations, we developed an iterative approach that estimates timing of genes inclusion in a core of correlated genes of the module. Routine `onset` estimates inclusion timing of early sensory genes `genes.sensory.early` for vector `mappings` of probabilistic cell projections:
 
 ```{r,warning = FALSE, message = FALSE, results = "hide"}
-inclusion.sensory <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,mappings=1:100,do.perm=FALSE,winperm=30,n.cores=30,permut.n=10,n.cores1=1)
+inclusion.sensory <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,mappings=1:100,do.perm=FALSE,winperm=30,permut.n=10)
 ```
 
 Average inclusion timing of each gene is
@@ -255,7 +257,7 @@ show.inclusion.summary(inclusion.sensory,gns.show=c("Neurog2","Pou4f1"))
 
 Analogous inference of inclusion timing for early atuonomic module `genes.autonomic.early`:
 ```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 4, fig.height = 4}
-inclusion.autonomic <- onset(ppt,geneset=genes.autonomic.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,mappings=1:100,do.perm=FALSE,winperm=30,n.cores=30,permut.n=10,n.cores1=1)
+inclusion.autonomic <- onset(ppt,geneset=genes.autonomic.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,mappings=1:100,do.perm=FALSE,winperm=30,permut.n=10)
 
 show.inclusion.summary(inclusion.autonomic,gns.show = c("Mef2c","Pbx1"))
 ```
@@ -266,7 +268,7 @@ For comparison, inclusion events are not detected in a control expression matrix
 
 ```{r,warning = FALSE, message = FALSE, results = "hide",fig.width = 4, fig.height = 5}
 inclusion.sensory.control <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=20,w=40,step=10,n.cells=280,
-                 mappings=1:10,do.perm=TRUE,winperm=10,n.cores=30,permut.n=10,n.cores1=1)
+                 mappings=1:10,do.perm=TRUE,winperm=10,permut.n=10)
 show.inclusion.summary(inclusion.sensory.control,gns.show=NA)
 ```
 
@@ -281,7 +283,7 @@ Then estimate mean gene inclusion time for `alps` levels:
 ```{r,warning = FALSE, message = FALSE, results = "hide"}
 incl.real <- unlist(lapply(alps,function(alp){
   cat(alp);cat('\n')
-  res.est <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=alp,w=40,step=10,n.cells=280, mappings=1:10,do.perm=FALSE,winperm=10,n.cores=30,permut.n=10,n.cores1=1)
+  res.est <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=alp,w=40,step=10,n.cells=280, mappings=1:10,do.perm=FALSE,winperm=10,permut.n=10)
   return(mean(res.est))
 }))
 ```
@@ -297,7 +299,7 @@ Estimate inclusion time for locally permuted expression levels by setting `do.pe
 ```{r,warning = FALSE, message = FALSE, results = "hide"}
 incl.perm <- unlist(lapply( alps,function(alp){
   cat(alp);cat('\n')
-  res.est <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=alp,w=40,step=10,n.cells=280, mappings=1:10,do.perm=TRUE,winperm=30,n.cores=30,permut.n=10,n.cores1=1)
+  res.est <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,leaves),expr=fpm,alp=alp,w=40,step=10,n.cells=280, mappings=1:10,do.perm=TRUE,winperm=30,permut.n=10)
   mean(res.est)
 }))
 ```

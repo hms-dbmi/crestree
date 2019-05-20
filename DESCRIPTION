@@ -16,7 +16,6 @@ VignetteBuilder: knitr
 Imports: 
     igraph,
     mgcv,
-    pcaMethods,
     quadprog,
     parallel,
     Rcpp,
@@ -24,7 +23,10 @@ Imports:
     RcppArmadillo,
     ggplot2,
     gridExtra,
-    grid
+    grid,
+    pbapply
+Remotes:
+  bioc::3.3/pcaMethods
 LinkingTo: 
     Rcpp,
     RcppArmadillo
