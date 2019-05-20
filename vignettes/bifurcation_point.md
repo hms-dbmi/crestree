@@ -56,7 +56,7 @@ Bifurcation point is charactarized by a progenitor and derivative branches.
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png)
+![plot of chunk unnamed-chunk-11](figure_bifurcation/unnamed-chunk-11-1.png)
 
 We thus start with selection a root of progenitor branch (355) and two leaves of derivative branches (165 and 91):
 
@@ -72,7 +72,7 @@ subtree <- extract.subtree(ppt,c(root,leaves))
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.3,lwd.tree = 3,subtree=subtree)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13-1.png)
+![plot of chunk unnamed-chunk-13](figure_bifurcation/unnamed-chunk-13-1.png)
 
 A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
 
@@ -172,7 +172,7 @@ plot(t(programs[c(1,3),cells]),col=ppt$cell.summary[cells,]$color,pch=19,cex=0.5
 plot(t(programs[c(2,4),cells]),col=ppt$cell.summary[cells,]$color,pch=19,cex=0.5)
 ```
 
-![plot of chunk unnamed-chunk-26](figure/unnamed-chunk-26-1.png)
+![plot of chunk unnamed-chunk-26](figure_bifurcation/unnamed-chunk-26-1.png)
 
 
 ## Coordination of fate biases
@@ -189,7 +189,7 @@ fig_cells <- fig.cells(emb,freq)
 marrangeGrob( c(fig_cells),ncol=length(fig_cells),nrow=1,top=NA)
 ```
 
-![plot of chunk unnamed-chunk-28](figure/unnamed-chunk-28-1.png)
+![plot of chunk unnamed-chunk-28](figure_bifurcation/unnamed-chunk-28-1.png)
 
 Windows can be also selected manually, below we follow selection used in the paper:
 
@@ -204,7 +204,7 @@ fig_cells <- fig.cells(emb,freq)
 marrangeGrob( c(fig_cells),ncol=length(fig_cells),nrow=1,top=NA)
 ```
 
-![plot of chunk unnamed-chunk-30](figure/unnamed-chunk-30-1.png)
+![plot of chunk unnamed-chunk-30](figure_bifurcation/unnamed-chunk-30-1.png)
 
 Next, routine `slide.cors` estimates average correlation of each early fate-specific gene with both modules (`genes.sensory.early` and `genes.autonomic.early`) in each window of cells:
 
@@ -220,7 +220,7 @@ marrangeGrob( c(fig_cells,fig_cor),ncol=length(fig_cells),nrow=2,
               layout_matrix = matrix(seq_len(2*length(fig_cells)), nrow = 2, ncol = length(fig_cells),byrow=TRUE),top=NA)
 ```
 
-![plot of chunk unnamed-chunk-32](figure/unnamed-chunk-32-1.png)
+![plot of chunk unnamed-chunk-32](figure_bifurcation/unnamed-chunk-32-1.png)
   
 To obtain more contrasted (and reproducible with the paper) view, a set of early genes could be further cleaned up by removing fate-specific genes having low correlation with its modules around bifurcation point:
 
@@ -241,7 +241,7 @@ marrangeGrob( c(fig_cells,fig_cor),ncol=length(fig_cells),nrow=2,
               layout_matrix = matrix(seq_len(2*length(fig_cells)), nrow = 2, ncol = length(fig_cells),byrow=TRUE),top=NA)
 ```
 
-![plot of chunk unnamed-chunk-34](figure/unnamed-chunk-34-1.png)
+![plot of chunk unnamed-chunk-34](figure_bifurcation/unnamed-chunk-34-1.png)
 
 
 More generally, formal trends of local coordination of fate-specific modules along branching trajectories can be estimated using `synchro` routine:
@@ -258,7 +258,7 @@ And visualized:
 visualize.synchro(crd)
 ```
 
-![plot of chunk unnamed-chunk-36](figure/unnamed-chunk-36-1.png)
+![plot of chunk unnamed-chunk-36](figure_bifurcation/unnamed-chunk-36-1.png)
 
 
 
@@ -286,7 +286,7 @@ As an example, predicted cumulative probability of gene *Pou4f1* inclusion is sh
 show.gene.inclusion("Pou4f1",inclusion.sensory)
 ```
 
-![plot of chunk unnamed-chunk-39](figure/unnamed-chunk-39-1.png)
+![plot of chunk unnamed-chunk-39](figure_bifurcation/unnamed-chunk-39-1.png)
 
 Overall summary statistics of inclusion probabilistics is visualized using `show.inclusion.summary` routine with each row of the heatmap reflecting cumulative inclusion probability of a single gene (as in example above):
 
@@ -294,7 +294,7 @@ Overall summary statistics of inclusion probabilistics is visualized using `show
 show.inclusion.summary(inclusion.sensory,gns.show=c("Neurog2","Pou4f1"))
 ```
 
-![plot of chunk unnamed-chunk-40](figure/unnamed-chunk-40-1.png)
+![plot of chunk unnamed-chunk-40](figure_bifurcation/unnamed-chunk-40-1.png)
 
 Analogous inference of inclusion timing for early atuonomic module `genes.autonomic.early`:
 
@@ -304,7 +304,7 @@ inclusion.autonomic <- onset(ppt,geneset=genes.autonomic.early,nodes=c(root,leav
 show.inclusion.summary(inclusion.autonomic,gns.show = c("Mef2c","Pbx1"))
 ```
 
-![plot of chunk unnamed-chunk-41](figure/unnamed-chunk-41-1.png)
+![plot of chunk unnamed-chunk-41](figure_bifurcation/unnamed-chunk-41-1.png)
 
 ## Finding optimal parameter to regulate false positive
 
@@ -317,7 +317,7 @@ inclusion.sensory.control <- onset(ppt,geneset=genes.sensory.early,nodes=c(root,
 show.inclusion.summary(inclusion.sensory.control,gns.show=NA)
 ```
 
-![plot of chunk unnamed-chunk-42](figure/unnamed-chunk-42-1.png)
+![plot of chunk unnamed-chunk-42](figure_bifurcation/unnamed-chunk-42-1.png)
 
 
 Parameter `alp` in routine `onset`, which was set to 20 in the analysis above, regulates stringency of inclusion point detection. Assessing summary statistics on inclusion times for a range of `alp` levels for real and permutated expression profiles enables selection of optimal `alp`. First, select a range of `alp` levels:
@@ -363,7 +363,7 @@ Comparison of early inclusion timing among all genes for real and control expres
 inclusion.stat(alps, incl.real, incl.perm)
 ```
 
-![plot of chunk unnamed-chunk-47](figure/unnamed-chunk-47-1.png)
+![plot of chunk unnamed-chunk-47](figure_bifurcation/unnamed-chunk-47-1.png)
 
 From that one can see that if `alp > 10` than overall false positive rate in permutations is close to zero, while detection sensitivity of real data gradually declines.
 
