@@ -1,5 +1,6 @@
 # Analysis of branching trajectories
 
+
 This vignette describes tree reconstruction procedure and basic routines to explore gene expression patterns associated with the tree. It demonstrates application of the tree analysis to neural crest system. The guideline starts with processed data, including normalized gene expression matrix and t-SNE embedding, shows how to reconstruct the tree, analyse transcriptional events along the tree and provides a number of visualization routines. 
 
 ## Preliminaries: loading the libraries
@@ -13,6 +14,7 @@ library(pcaMethods)
 library(Rcpp) 
 library(inline) 
 library(RcppArmadillo) 
+library(pbapply)
 
 library(crestree)
 ```
@@ -82,7 +84,7 @@ str(wgm)
 
 wgwm <- crest$wgwm # matrix of expression weights
 ```
-Of note, matrices contain only 1169 the most over-dispersed genes. Alternatively, we can upload the full matrix from a web server:
+Of note, matrices contain only 1169 the most over-dispersed genes. Alternatively, we can upload the full matrix from a web server (it can take some time):
 
 ```r
 fpm <- read.table("http://pklab.med.harvard.edu/ruslan/neural_crest/fpm.txt",header=TRUE)
@@ -121,7 +123,7 @@ plotppt(z,emb,tips=FALSE,cex.tree = 0.1,cex.main=0.2,lwd.tree = 1)
 
 ![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12-1.png)
 
-We next switch to expression matrix `wgm` with weights `wgmw` used in the paper. Of note, optimal tree parameters `lambda` and `sigma` are sensitive to the data properties, such as dataset size or choice of expression matrices. In section **"Selection of optimal tree parameters"** we discuss a strategy of parameters selection and suggest two guiding routines. Below the tree is modeled and visualized with a new choice of expression matrices:
+We next switch to expression matrix `wgm` with weights `wgmw` used in the paper. Of note, optimal tree parameters `lambda` and `sigma` are sensitive to the data properties, such as dataset size or choice of expression matrices. In section ["Selection of optimal tree parameters"](#Selection-of-optimal-tree-parameters) we discuss a strategy of parameters selection and suggest two guiding routines. Below the tree is modeled and visualized with a new choice of expression matrices:
 
 ```r
 lambda <- 250
@@ -139,7 +141,7 @@ Optionally, stable properties of the tree can be assessed using sampling of cell
 
 ```r
 ppt_ensemble <- bootstrap.ppt(X=wgm[,nc.cells], W=wgwm[,nc.cells], emb=emb, metrics=metrics, M=as.integer(length(nc.cells)*0.9), lambda=lambda, sigma=sigma, plot=FALSE,
-                             n.samples=20,n.cores=20, seed=NULL,replace=FALSE)
+                             n.samples=20, seed=NULL,replace=FALSE)
 ```
 
 Sampling of trees can be visualized on embedding using routing `plotpptl`:
@@ -205,7 +207,7 @@ ppt <- project.cells.onto.ppt(ppt,emb,n.mapping = 100)
 We are ready to study gene expression patterns along the tree. The first step is to identify genes that have expression levels significantly varied along the tree (tree-associated genes). Routine `test.associated.genes` estimates significance of each gene's association with the tree using an input expression matrix, e.g. `fpm`:
 
 ```r
-ppt <- test.associated.genes(ppt,n.map=1,n.cores = 20,fpm,summary=TRUE)
+ppt <- test.associated.genes(ppt,n.map=1,fpm,summary=TRUE)
 ```
 
 ![plot of chunk unnamed-chunk-22](figure/unnamed-chunk-22-1.png)
@@ -239,11 +241,9 @@ ppt$stat.association[genes.tree,]$sign <- TRUE
 Now expression levels of differentially expressed genes can be modeled as a function of pseudotime along the tree. 
 
 ```r
-ppt <- fit.associated.genes(ppt,fpm,n.map=1,n.cores=20)
+ppt <- fit.associated.genes(ppt,fpm,n.map=1)
 ## [1] "fit gene expression for mapping 1"
-## 
-##     branch-monotonous      complex patterns transiently expressed 
-##                   673                   112                   263
+## Error in dimnames(x) <- dn: length of 'dimnames' [1] not equal to array extent
 ```
 
 There are different ways to visualize expression trends of a gene along the tree. For example, as a function of pseudotime:
@@ -251,6 +251,7 @@ There are different ways to visualize expression trends of a gene along the tree
 ```r
 gene <- "Neurog2"
 visualise.trajectory(ppt,gene,fpm[gene,],cex.main = 3,lwd.t2=0.5)
+## Error in segments(r$cell.summary[c(c1.name), ]$t, r$fit.summary[gene, : invalid second argument
 ```
 
 ![plot of chunk unnamed-chunk-27](figure/unnamed-chunk-27-1.png)
@@ -260,9 +261,8 @@ The other way is to show how fitted expression levels `fit.summary` change along
 ```r
 par(mar=c(4,4,3,1))
 plotppt(ppt,emb,pattern.cell = ppt$fit.summary[gene,],gene="Neurog2",cex.main=1,cex.tree = 1.0,lwd.tree = 0.1,par=FALSE)
+## Error in plotppt(ppt, emb, pattern.cell = ppt$fit.summary[gene, ], gene = "Neurog2", : mat expression matrix should be defined together with gene parameter
 ```
-
-![plot of chunk unnamed-chunk-28](figure/unnamed-chunk-28-1.png)
 
 We can now use matrix of expression profiles `fit.summary` smoothed along the tree to cluster differentially expressed genes and explore major tree-associated patterns of expression. First, lets select a subset of genes that have large magnitude of variability along the tree:
 
@@ -279,28 +279,27 @@ str(genes)
 Then smoothed expression profiles can be clustered using a variety of methods. Clusters of genes can be explored using `visualise.clusters` visualization routine, using as a default hierarchical clustering with Ward linkage and cosine-based similarity with predefined number of `clust.n` clusters:
 
 ```r
-visualise.clusters(ppt,emb,clust.n = 5,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
+visualise.clusters(ppt,emb,clust.n = 10,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
+## Error in apply(emat, 1, function(x) (x - mean(x))/sd(x)): dim(X) must have a positive length
 ```
-
-![plot of chunk unnamed-chunk-31](figure/unnamed-chunk-31-1.png)
 
 Alternatively, it is possible to provide a vector of gene clusters for visualization. Below we use hierarchical clustering with euclidean distance to cluster genes:
 
 ```r
 hc <- hclust(dist(ppt$fit.summary[genes.tree,]),method="ward.D") # hierarchical clustering
-clust <- cutree(hc,6) # partition of genes in 4 clusters
+## Error in array(x, c(length(x), 1L), if (!is.null(names(x))) list(names(x), : 'data' must be of a vector type, was 'NULL'
+clust <- cutree(hc,10) # partition of genes in 4 clusters
+## Error in nrow(tree$merge): object 'hc' not found
 
 str(clust)
-##  Named int [1:1048] 1 2 3 4 2 3 3 3 4 5 ...
-##  - attr(*, "names")= chr [1:1048] "Rpl7" "Rdh10" "Crispld1" "Tfap2b" ...
+## Error in str(clust): object 'clust' not found
 ```
 And supply a vector `clust` for visualizzation:
 
 ```r
 visualise.clusters(ppt,emb,clust=clust,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
+## Error in visualise.clusters(ppt, emb, clust = clust, cex.gene = 1, cex.cell = 0.05, : object 'clust' not found
 ```
-
-![plot of chunk unnamed-chunk-33](figure/unnamed-chunk-33-1.png)
 
 
 ## Analysis of subtree of interest
@@ -328,6 +327,7 @@ plotppt(ppt,emb,gene=gene,mat=fpm,cex.main=1,cex.tree = 1.5,lwd.tree = 0.1,subtr
 
 ```r
 visualise.trajectory(ppt,gene,fpm,cex.main = 3,subtree = zseg,lwd.t2=1)
+## Error in segments(r$cell.summary[c(c1.name), ]$t, r$fit.summary[gene, : invalid second argument
 ```
 
 ![plot of chunk unnamed-chunk-36](figure/unnamed-chunk-36-1.png)
@@ -372,7 +372,8 @@ leaves <- c(165,91)
 A routine `test.fork.genes` performs assessment of genes differentially expression between post-bifurcation branches:
 
 ```r
-fork.de <- test.fork.genes(ppt,fpm[,],root=root,leaves=leaves,n.mapping = 1,n.cores=30)
+fork.de <- test.fork.genes(ppt,fpm[,],root=root,leaves=leaves,n.mapping = 1)
+## Error in dimnames(x) <- dn: length of 'dimnames' [1] not equal to array extent
 ```
 
 A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` and p-value `pd1.p` of expression changes from derivative branch 1 to progenitor branch:
@@ -382,16 +383,16 @@ head(fork.de[order(fork.de$p),],)
 ```
 
 
-|        |    effect|  p| fdr| st| stf|      pd1.a|     pd1.p|      pd2.a|     pd2.p|
-|:-------|---------:|--:|---:|--:|---:|----------:|---------:|----------:|---------:|
-|Fam71f2 |  0.025891|  0|   0|  1|   1| -0.0091337| 0.5964409| -0.0239106| 0.0222614|
-|Neurog2 |  2.128871|  0|   0|  1|   1|  1.0819870| 0.0000000| -0.2581314| 0.0001524|
-|Hsd11b2 | -1.693875|  0|   0|  1|   1|  0.0756059| 0.1867864|  0.9509055| 0.0000000|
-|Srrm4   |  0.928124|  0|   0|  1|   1|  0.6634570| 0.0000000|  0.1075456| 0.0000487|
-|Mcam    | -1.486911|  0|   0|  1|   1|  0.3521913| 0.0000001|  1.0221176| 0.0000000|
-|Phox2b  | -1.297520|  0|   0|  1|   1|  0.0087856| 0.4096110|  0.9356242| 0.0000000|
+|        |    effect|  p| fdr|  st| stf|     pd1.a| pd1.p|      pd2.a|     pd2.p| state|
+|:-------|---------:|--:|---:|---:|---:|---------:|-----:|----------:|---------:|-----:|
+|Neurog2 | 1.9032796|  0|   0| 0.9| 0.9| 0.1012255|     0| -0.0262510| 0.0001858|     1|
+|Dll1    | 1.4404789|  0|   0| 1.0| 1.0| 0.0976255|     0|  0.0043581| 0.3941055|     1|
+|Srrm4   | 0.8383684|  0|   0| 1.0| 1.0| 0.0646809|     0|  0.0099734| 0.0002647|     1|
+|Mfng    | 0.9532576|  0|   0| 1.0| 1.0| 0.0630761|     0|  0.0034360| 0.4424417|     1|
+|Eya2    | 1.0311280|  0|   0| 0.9| 0.9| 0.0737302|     0|  0.0082446| 0.0035890|     1|
+|Pcdh8   | 1.1417276|  0|   0| 1.0| 0.9| 0.0515220|     0| -0.0193619| 0.0000199|     1|
 
-Detailed analysis of bifurcation point is described in https://github.com/hms-dbmi/crestree/blob/master/vignettes/bifurcation_point.md
+See manual [analysis of bifurcation point](https://github.com/hms-dbmi/crestree/blob/master/vignettes/bifurcation_point.md) for detailed analysis.
 
 ## Selection of optimal tree parameters
 Choice of parameters `sigma` and `lambda` for tree reconstruction is of crucial importance. We suggest a combination of formal criteria and exploratory analysis for selection of parameters. First, parameter `sigma` is selected as an optimum of cross validation upon `lambda`=0:

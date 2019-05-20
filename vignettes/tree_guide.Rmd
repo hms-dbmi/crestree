@@ -214,13 +214,13 @@ str(genes)
 
 Then smoothed expression profiles can be clustered using a variety of methods. Clusters of genes can be explored using `visualise.clusters` visualization routine, using as a default hierarchical clustering with Ward linkage and cosine-based similarity with predefined number of `clust.n` clusters:
 ```{r,warning = FALSE, message = FALSE}
-visualise.clusters(ppt,emb,clust.n = 5,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
+visualise.clusters(ppt,emb,clust.n = 10,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
 ```
 
 Alternatively, it is possible to provide a vector of gene clusters for visualization. Below we use hierarchical clustering with euclidean distance to cluster genes:
 ```{r}
 hc <- hclust(dist(ppt$fit.summary[genes.tree,]),method="ward.D") # hierarchical clustering
-clust <- cutree(hc,6) # partition of genes in 4 clusters
+clust <- cutree(hc,10) # partition of genes in 4 clusters
 
 str(clust)
 ```
