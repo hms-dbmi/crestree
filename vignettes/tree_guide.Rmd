@@ -224,7 +224,7 @@ clust <- cutree(hc,10) # partition of genes in 4 clusters
 
 str(clust)
 ```
-And supply a vector `clust` for visualizzation:
+And supply a vector `clust` for visualization:
 ```{r,warning = FALSE, message = FALSE}
 visualise.clusters(ppt,emb,clust=clust,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
 ```

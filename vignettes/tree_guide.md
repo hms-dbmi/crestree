@@ -1,4 +1,14 @@
-# Analysis of branching trajectories
+---
+title: "Analysis of branching trajectories"
+#author: "Ruslan Soldatov"
+#date: "2019-05-20"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Analysis of branching trajectories}
+---
+
 
 
 This vignette describes tree reconstruction procedure and basic routines to explore gene expression patterns associated with the tree. It demonstrates application of the tree analysis to neural crest system. The guideline starts with processed data, including normalized gene expression matrix and t-SNE embedding, shows how to reconstruct the tree, analyse transcriptional events along the tree and provides a number of visualization routines. 
@@ -243,7 +253,9 @@ Now expression levels of differentially expressed genes can be modeled as a func
 ```r
 ppt <- fit.associated.genes(ppt,fpm,n.map=1)
 ## [1] "fit gene expression for mapping 1"
-## Error in dimnames(x) <- dn: length of 'dimnames' [1] not equal to array extent
+## 
+##     branch-monotonous      complex patterns transiently expressed 
+##                   673                   112                   263
 ```
 
 There are different ways to visualize expression trends of a gene along the tree. For example, as a function of pseudotime:
@@ -251,7 +263,6 @@ There are different ways to visualize expression trends of a gene along the tree
 ```r
 gene <- "Neurog2"
 visualise.trajectory(ppt,gene,fpm[gene,],cex.main = 3,lwd.t2=0.5)
-## Error in segments(r$cell.summary[c(c1.name), ]$t, r$fit.summary[gene, : invalid second argument
 ```
 
 ![plot of chunk unnamed-chunk-27](figure/unnamed-chunk-27-1.png)
@@ -261,8 +272,9 @@ The other way is to show how fitted expression levels `fit.summary` change along
 ```r
 par(mar=c(4,4,3,1))
 plotppt(ppt,emb,pattern.cell = ppt$fit.summary[gene,],gene="Neurog2",cex.main=1,cex.tree = 1.0,lwd.tree = 0.1,par=FALSE)
-## Error in plotppt(ppt, emb, pattern.cell = ppt$fit.summary[gene, ], gene = "Neurog2", : mat expression matrix should be defined together with gene parameter
 ```
+
+![plot of chunk unnamed-chunk-28](figure/unnamed-chunk-28-1.png)
 
 We can now use matrix of expression profiles `fit.summary` smoothed along the tree to cluster differentially expressed genes and explore major tree-associated patterns of expression. First, lets select a subset of genes that have large magnitude of variability along the tree:
 
@@ -280,26 +292,27 @@ Then smoothed expression profiles can be clustered using a variety of methods. C
 
 ```r
 visualise.clusters(ppt,emb,clust.n = 10,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
-## Error in apply(emat, 1, function(x) (x - mean(x))/sd(x)): dim(X) must have a positive length
 ```
+
+![plot of chunk unnamed-chunk-31](figure/unnamed-chunk-31-1.png)
 
 Alternatively, it is possible to provide a vector of gene clusters for visualization. Below we use hierarchical clustering with euclidean distance to cluster genes:
 
 ```r
 hc <- hclust(dist(ppt$fit.summary[genes.tree,]),method="ward.D") # hierarchical clustering
-## Error in array(x, c(length(x), 1L), if (!is.null(names(x))) list(names(x), : 'data' must be of a vector type, was 'NULL'
 clust <- cutree(hc,10) # partition of genes in 4 clusters
-## Error in nrow(tree$merge): object 'hc' not found
 
 str(clust)
-## Error in str(clust): object 'clust' not found
+##  Named int [1:1048] 1 2 3 4 5 3 3 6 4 7 ...
+##  - attr(*, "names")= chr [1:1048] "Rpl7" "Rdh10" "Crispld1" "Tfap2b" ...
 ```
-And supply a vector `clust` for visualizzation:
+And supply a vector `clust` for visualization:
 
 ```r
 visualise.clusters(ppt,emb,clust=clust,cex.gene=1,cex.cell=0.05,cex.tree=0.2)
-## Error in visualise.clusters(ppt, emb, clust = clust, cex.gene = 1, cex.cell = 0.05, : object 'clust' not found
 ```
+
+![plot of chunk unnamed-chunk-33](figure/unnamed-chunk-33-1.png)
 
 
 ## Analysis of subtree of interest
@@ -327,7 +340,6 @@ plotppt(ppt,emb,gene=gene,mat=fpm,cex.main=1,cex.tree = 1.5,lwd.tree = 0.1,subtr
 
 ```r
 visualise.trajectory(ppt,gene,fpm,cex.main = 3,subtree = zseg,lwd.t2=1)
-## Error in segments(r$cell.summary[c(c1.name), ]$t, r$fit.summary[gene, : invalid second argument
 ```
 
 ![plot of chunk unnamed-chunk-36](figure/unnamed-chunk-36-1.png)
@@ -373,7 +385,6 @@ A routine `test.fork.genes` performs assessment of genes differentially expressi
 
 ```r
 fork.de <- test.fork.genes(ppt,fpm[,],root=root,leaves=leaves,n.mapping = 1)
-## Error in dimnames(x) <- dn: length of 'dimnames' [1] not equal to array extent
 ```
 
 A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` and p-value `pd1.p` of expression changes from derivative branch 1 to progenitor branch:
@@ -383,14 +394,14 @@ head(fork.de[order(fork.de$p),],)
 ```
 
 
-|        |    effect|  p| fdr|  st| stf|     pd1.a| pd1.p|      pd2.a|     pd2.p| state|
-|:-------|---------:|--:|---:|---:|---:|---------:|-----:|----------:|---------:|-----:|
-|Neurog2 | 1.9032796|  0|   0| 0.9| 0.9| 0.1012255|     0| -0.0262510| 0.0001858|     1|
-|Dll1    | 1.4404789|  0|   0| 1.0| 1.0| 0.0976255|     0|  0.0043581| 0.3941055|     1|
-|Srrm4   | 0.8383684|  0|   0| 1.0| 1.0| 0.0646809|     0|  0.0099734| 0.0002647|     1|
-|Mfng    | 0.9532576|  0|   0| 1.0| 1.0| 0.0630761|     0|  0.0034360| 0.4424417|     1|
-|Eya2    | 1.0311280|  0|   0| 0.9| 0.9| 0.0737302|     0|  0.0082446| 0.0035890|     1|
-|Pcdh8   | 1.1417276|  0|   0| 1.0| 0.9| 0.0515220|     0| -0.0193619| 0.0000199|     1|
+|        |    effect|  p| fdr| st| stf|      pd1.a|     pd1.p|      pd2.a|     pd2.p|
+|:-------|---------:|--:|---:|--:|---:|----------:|---------:|----------:|---------:|
+|Fam71f2 |  0.025891|  0|   0|  1|   1| -0.0091337| 0.5964409| -0.0239106| 0.0222614|
+|Neurog2 |  2.128871|  0|   0|  1|   1|  1.0819870| 0.0000000| -0.2581314| 0.0001524|
+|Hsd11b2 | -1.693875|  0|   0|  1|   1|  0.0756059| 0.1867864|  0.9509055| 0.0000000|
+|Srrm4   |  0.928124|  0|   0|  1|   1|  0.6634570| 0.0000000|  0.1075456| 0.0000487|
+|Mcam    | -1.486911|  0|   0|  1|   1|  0.3521913| 0.0000001|  1.0221176| 0.0000000|
+|Phox2b  | -1.297520|  0|   0|  1|   1|  0.0087856| 0.4096110|  0.9356242| 0.0000000|
 
 See manual [analysis of bifurcation point](https://github.com/hms-dbmi/crestree/blob/master/vignettes/bifurcation_point.md) for detailed analysis.
 

@@ -637,7 +637,7 @@ project.cells.onto.ppt <- function(r,emb=NULL,n.mapping=1) {
 ##' @param fdr.method a method to adjust for multiple testing. Default - Bonferroni. Alternatively, "BH" can be used.
 ##' @return modified pptree object with a new field r$stat.association that includes pvalue, amplitude, fdr, stability and siginificane (TRUE/FALSE) of gene associations
 ##' @export
-test.associated.genes <- function(r,X,n.map=1,n.cores=parallel::detectCores()/2,spline.df=3,fdr.cut=1e-4,A.cut=1,st.cut=0.8,summary=FALSE,subtree=NA,fdr.method=NULL, ...) {
+test.associated.genes <- function(r,X,n.map=1,n.cores=(parallel::detectCores()/2),spline.df=3,fdr.cut=1e-4,A.cut=1,st.cut=0.8,summary=FALSE,subtree=NA,fdr.method=NULL, ...) {
   if (is.null(r$root)) {stop("assign root first")}
   if (is.null(r$cell.summary) | is.null(r$cell.info)) {stop("project cells onto the tree first")}
   X <- X[,intersect(colnames(X),rownames(r$cell.summary))]
