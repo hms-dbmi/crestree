@@ -2,6 +2,7 @@
 
 export(activation.fork)
 export(activation.statistics)
+export(activity.lasso)
 export(bootstrap.ppt)
 export(branch.specific.genes)
 export(classify.genes)

@@ -4,8 +4,8 @@
 \alias{mppt.tree}
 \title{Sample pptree objects using different seeds}
 \usage{
-mppt.tree(..., n.cores = 30, n.samples = n.cores, seed = NULL,
-  seeds = NULL)
+mppt.tree(..., n.cores = parallel::detectCores()/2,
+  n.samples = n.cores, seed = NULL, seeds = NULL)
 }
 \arguments{
 \item{n.samples}{a number of seed samplings.}

@@ -6,7 +6,7 @@
 \usage{
 test.fork.genes(r, mat, matw = NULL, root, leaves,
   genes = rownames(mat), n.mapping = 1, n.mapping.up = 1,
-  n.cores = 30)
+  n.cores = parallel::detectCores()/2)
 }
 \arguments{
 \item{r}{pptree object}
@@ -21,7 +21,7 @@ test.fork.genes(r, mat, matw = NULL, root, leaves,
 
 \item{n.mapping}{number of probabilistic cell-to-tree projections to use for robustness}
 
-\item{n.mapping}{number of probabilistic cell-to-tree projections to estimate the amount of upregulation relative to progenitor branch}
+\item{n.mapping.up}{number of probabilistic cell-to-tree projections to estimate the amount of upregulation relative to progenitor branch}
 }
 \value{
 summary statistics of size effect and p-value of association with bifurcaiton fork.

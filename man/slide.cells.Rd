@@ -5,7 +5,7 @@
 \title{Assign cells in a probabilistic manner to non-intersecting windows along pseudotime}
 \usage{
 slide.cells(r, root, leaves, wind = 50, mapping = TRUE,
-  regions = NULL, n.cores = 10)
+  regions = NULL, n.cores = parallel::detectCores()/2)
 }
 \arguments{
 \item{r}{ppt tree}

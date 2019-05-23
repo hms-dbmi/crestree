@@ -4,8 +4,8 @@
 \alias{bootstrap.ppt}
 \title{Sample pptree objects using bootstrap}
 \usage{
-bootstrap.ppt(..., X, M = ncol(X), n.cores = 20, n.samples = n.cores,
-  seed = NULL, replace = T)
+bootstrap.ppt(..., X, M = ncol(X), n.cores = parallel::detectCores()/2,
+  n.samples = n.cores, seed = NULL, replace = T)
 }
 \arguments{
 \item{X}{expression matrix of genes (rows) and cells (columns).}

@@ -4,7 +4,8 @@
 \alias{corMatrixC}
 \title{Estimates local gene-gene correlations in a sequence of windows along pseudotime for locally permuted matrix}
 \usage{
-corMatrixC(genes, cells, cdnormX, step, w, permutN, n.cores)
+corMatrixC(genes, cells, cdnormX, step, w, permutN,
+  n.cores = parallel::detectCores()/2)
 }
 \arguments{
 \item{genes}{a set of genes to estimate local pairwise expression correlations}

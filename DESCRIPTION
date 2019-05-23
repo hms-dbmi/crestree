@@ -24,7 +24,8 @@ Imports:
     ggplot2,
     gridExtra,
     grid,
-    pbapply
+    pbapply,
+    glmnet
 Remotes:
   bioc::3.3/pcaMethods
 LinkingTo: 

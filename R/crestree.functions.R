@@ -338,7 +338,7 @@ lambda.explore <- function(X=NA,M=ncol(X),sigma=0.1,emb=NA,metrics="cosine",tips
 plotppt <- function(r,emb,F=NULL, gene=NULL, main=gene, mat=NULL, pattern.cell=NULL, pattern.tree=NULL,
                     cex.col=NA, tree.col = NULL,
                     cex.main=0.5, cex.title=1,
-                    cex.tree=1.5,lwd.tree=1,par=TRUE,tips=FALSE,forks=FALSE,subtree=NA,...) {
+                    cex.tree=1.5,lwd.tree=1,par=TRUE,tips=FALSE,forks=FALSE,subtree=NA,pallete=NULL,...) {
   if ( sum(!rownames(r$R)%in%rownames(emb))>0 ) { stop("cell names used for tree reconstruction are not consistent with row names of embedding (emb)") }
   if (sum(!is.na(cex.col))==0 ) {cex.col=rep("grey70",nrow(emb)); names(cex.col) <- rownames(emb)}
   vi = rownames(emb)%in%rownames(r$R); names(vi) <- rownames(emb)
@@ -349,6 +349,7 @@ plotppt <- function(r,emb,F=NULL, gene=NULL, main=gene, mat=NULL, pattern.cell=N
     if ( sum(!rownames(r$R) %in% colnames(mat)) > 0 ) { stop("cell names used for tree reconstruction are not consistent with mat column names") }
     pattern.cell = mat[gene,rownames(r$R)]#mat[gene,rownames(r$R)]
   }
+  if (is.null(pallete)) {pallete <- colorRampPalette(c("blue","gray50","red"))(1024)}else{pallete <- pallete(1024)}
 
   if ( !is.null(pattern.tree) & length(pattern.tree) != ncol(r$R) ) { stop("length of pattern.tree vector is inconsistent with cell number used for tree reconstruction") }
   if ( !is.null(pattern.cell) & is.null(pattern.tree) ){
@@ -362,11 +363,11 @@ plotppt <- function(r,emb,F=NULL, gene=NULL, main=gene, mat=NULL, pattern.cell=N
   if (is.null(tree.col)) {tree.col = "black"}
   if( !is.null(pattern.cell) ){
     cex.col <- rep("black",nrow(emb)); names(cex.col) <- rownames(emb)
-    cex.col[names(pattern.cell)] <- colorRampPalette(c("blue","gray50","red"))(1024)[round((pattern.cell-min(pattern.cell))/diff(range(pattern.cell))*1023)+1]
+    cex.col[names(pattern.cell)] <- pallete[round((pattern.cell-min(pattern.cell))/diff(range(pattern.cell))*1023)+1]
     #cex.col <- colorRampPalette(c("blue","gray50","red"))(1024)[round((pattern.cell-min(pattern.cell))/diff(range(pattern.cell))*1023)+1]
   }
   if ( !is.null(pattern.tree) ){
-    tree.col <- colorRampPalette(c("blue","gray50","red"))(1024)[round((pattern.tree-min(pattern.tree,na.rm=T))/diff(range(pattern.tree,na.rm = T))*1023)+1]
+    tree.col <- pallete[round((pattern.tree-min(pattern.tree,na.rm=T))/diff(range(pattern.tree,na.rm = T))*1023)+1]
     #r$fitting$pp.fitted[gene,]
   }
 
@@ -375,7 +376,6 @@ plotppt <- function(r,emb,F=NULL, gene=NULL, main=gene, mat=NULL, pattern.cell=N
     tree.col[!r$pp.info$seg %in% subtree$seg] <- "grey80"
     vi[vi==TRUE][rownames(r$cell.summary)][!r$cell.summary$seg %in% subtree$seg] <- FALSE
   }
-
   if ( sum(names(cex.col)%in%rownames(emb))==0 ) {stop('cex.col names do not match row names of emb')}
 
   cols <- rep("black",nrow(emb)); names(cols) <- rownames(emb)
@@ -723,7 +723,8 @@ fit.associated.genes <- function(r,X,n.map=1,n.cores=parallel::detectCores()/2,m
   X <- X[,intersect(colnames(X),rownames(r$cell.summary))]
   if (sum(!colnames(X) %in% rownames(r$cell.summary)) > 0) {stop( paste("Expression matrix X contains cells not mapped onto the tree, e.g. cell",colnames(X)[!colnames(X) %in% rownames(r$cell.summary)][1]) )}
   if (n.map < 0 | n.map > length(r$cell.info)) {stop("n.map should be more than 0 and less than number of mappings")}
-  if ( is.null(r$stat.association) ) {stop("identiy significantly associated genes using test.associated.genes()")}
+  if ( is.null(r$stat.association) ) {stop("identify significantly associated genes using test.associated.genes()")}
+  genes <- intersect(rownames(X),rownames(r$stat.association)[r$stat.association$sign])
 
 
   #gtl <- lapply(1:n.map,function(ix){
@@ -733,11 +734,11 @@ fit.associated.genes <- function(r,X,n.map=1,n.cores=parallel::detectCores()/2,m
   #  }
 
   if (method=="ts"){
-    gtl <- fit.ts(r,X,n.map,n.cores,gamma,knn)
+    gtl <- fit.ts(r,X[genes,],n.map,n.cores,gamma,knn)
   }else if (method=="sf"){
-    gtl <- t.fit.sf(r,X,n.map,n.cores,gamma)
+    gtl <- t.fit.sf(r,X[genes,],n.map,n.cores,gamma)
   }else if (method=="av"){
-    gtl <- t.fit.av(r,X,n.map,n.cores)
+    gtl <- t.fit.av(r,X[genes,],n.map,n.cores)
   }else{stop("please choose correct method name")}
   #})
 
@@ -804,7 +805,8 @@ fit.ts <- function(r,X,n.map,n.cores=parallel::detectCores()/2,gamma=1.5,knn=1) 
     }))
 
     #branches.ll <- branches
-    genes <- intersect(rownames(X),rownames(r$stat.association)[r$stat.association$sign])
+    #genes <- intersect(rownames(X),rownames(r$stat.association)[r$stat.association$sign])
+    genes <- rownames(X)
     gt <- do.call(rbind,mclapply(genes,function(gene) {
       expr.fitted <- unlist(lapply(unique(branches$branch),function(br){
         branches1 <- branches[branches$branch==br,]
@@ -1302,6 +1304,32 @@ fork.pt = function(r,root,leaves){
   names(time.stat) <- c("root","bifurcation","leave 1","leave 2")
   return(time.stat)
 }
+
+##' Predict regulatory impact (activity) of transcription factors
+##' @param em matrix of expression levels
+##' @param motmat matrix of target-TF scores
+##' @param perm boolean, do permutations if TRUE.
+##' @param n.cores number of cores to use
+##' @return matrix of predited TF activities in cells.
+##' @export
+activity.lasso <- function(em,motmat,perm=FALSE,n.cores=1){
+  gns <- intersect(rownames(em),rownames(motmat))
+
+  # center expression and TF-target scores
+  em.norm = em[gns,]-apply(em[gns,],1,mean)
+  motmat.norm <- motmat[gns,]-apply(motmat[gns,],2,mean)
+
+  poss <- 1:nrow(em.norm)
+  if (perm==TRUE) {poss <- sample(1:nrow(em.norm))}
+  # lasso regression for each cell
+  cv.lasso = do.call(cbind, mclapply(1:ncol(em.norm),function(i){
+    cv.lasso <- cv.glmnet( motmat.norm,em.norm[poss,i],alpha=1,intercept=FALSE, standardize=TRUE)#,type.measure='auc')
+    return( coef(cv.lasso,s=cv.lasso$lambda.min)[2:(ncol(motmat)+1),1] )
+  },mc.cores = n.cores))
+  rownames(cv.lasso) = colnames(motmat); colnames(cv.lasso) = colnames(em.norm)
+  return(cv.lasso)
+}
+
 
 ##' Decompose a number by degrees of 2.
 ##' @param n number

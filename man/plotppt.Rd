@@ -8,7 +8,7 @@ plotppt(r, emb, F = NULL, gene = NULL, main = gene, mat = NULL,
   pattern.cell = NULL, pattern.tree = NULL, cex.col = NA,
   tree.col = NULL, cex.main = 0.5, cex.title = 1, cex.tree = 1.5,
   lwd.tree = 1, par = TRUE, tips = FALSE, forks = FALSE,
-  subtree = NA, ...)
+  subtree = NA, pallete = NULL, ...)
 }
 \arguments{
 \item{r}{- pptree object}

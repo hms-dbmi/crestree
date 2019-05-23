@@ -4,7 +4,8 @@
 \alias{test.associated.genes}
 \title{Determine a set of genes significantly associated with the tree}
 \usage{
-test.associated.genes(r, X, n.map = 1, n.cores = 20, spline.df = 3,
+test.associated.genes(r, X, n.map = 1,
+  n.cores = (parallel::detectCores()/2), spline.df = 3,
   fdr.cut = 1e-04, A.cut = 1, st.cut = 0.8, summary = FALSE,
   subtree = NA, fdr.method = NULL, ...)
 }

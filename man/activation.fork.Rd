@@ -5,7 +5,7 @@
 \title{Estimate optimum of expression and time of activation}
 \usage{
 activation.fork(r, fork.de, mat, root, leaves, deriv.cutoff = 0.015,
-  gamma = 1, n.mapping = 1, n.cores = 10)
+  gamma = 1, n.mapping = 1, n.cores = parallel::detectCores()/2)
 }
 \arguments{
 \item{r}{ppt.tree object}

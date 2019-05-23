@@ -4,8 +4,9 @@
 \alias{fit.associated.genes}
 \title{Model gene expression levels as a function of tree positions.}
 \usage{
-fit.associated.genes(r, X, n.map = 1, n.cores = 20, method = "ts",
-  knn = 1, gamma = 1.5)
+fit.associated.genes(r, X, n.map = 1,
+  n.cores = parallel::detectCores()/2, method = "ts", knn = 1,
+  gamma = 1.5)
 }
 \arguments{
 \item{r}{pptree object}

@@ -1,6 +1,7 @@
 # Analysis of branching trajectories
 
 
+
 This vignette describes tree reconstruction procedure and basic routines to explore gene expression patterns associated with the tree. It demonstrates application of the tree analysis to neural crest system. The guideline starts with processed data, including normalized gene expression matrix and t-SNE embedding, shows how to reconstruct the tree, analyse transcriptional events along the tree and provides a number of visualization routines. 
 
 ## Preliminaries: loading the libraries
@@ -15,6 +16,7 @@ library(Rcpp)
 library(inline) 
 library(RcppArmadillo) 
 library(pbapply)
+library(glmnet)
 
 library(crestree)
 ```
@@ -356,6 +358,38 @@ head(stat.subtree[order(stat.subtree$pval),])
 |Cp       |    0| 3.145898|   0|  1|TRUE |
 |Tfap2b   |    0| 3.120048|   0|  1|TRUE |
 
+## Inference of transcription factors regulatory activity
+
+Expression levels of a transcription factor (TF) do not yet inform about its regulatory impact on target genes. Here we use coordinated changes of expression levels of TF target genes as a readout of regulatory impact. For that, we use a matrix of predicted target-TF scores (generated as described in the paper):
+
+
+```r
+str(crest$motmat)
+##  num [1:14725, 1:50] 0 0 1.94 0 0 ...
+##  - attr(*, "dimnames")=List of 2
+##   ..$ : chr [1:14725] "Ano4" "Pelp1" "Hbs1l" "Lamtor5" ...
+##   ..$ : chr [1:50] "Mecom" "Foxd3" "Pbx1" "Sox9" ...
+```
+
+Smoothed expression levels `ppt$fit.list[[1]]` of targets are modeled as a linear combination of unknown TF activities using lasso regression:
+
+```r
+act <- activity.lasso(ppt$fit.list[[1]],crest$motmat)
+dim(act)
+## [1]  50 589
+```
+
+Matrix `act` contains predicted activity of each TF in each cell. Tree-projected pattern of _Neurog2_ activity indicates its regulatory impact in sensory branch:
+
+```r
+tf <- "Neurog2"
+
+par(mar=c(4,4,3,1))
+plotppt(ppt,emb,pattern.cell = act[tf,],gene=tf,cex.main=0.5,cex.tree = 1,lwd.tree = 0.1,par=FALSE,pallete = colorRampPalette(c("darkgreen","gray50","orange")) )
+```
+
+![plot of chunk unnamed-chunk-42](figure/unnamed-chunk-42-1.png)
+
 ## Analysis of bifurcation point
 A particularly interesting implication of the tree is analysis of bifurcation point. Usually, the first step of such analysis is infererence of genes that are differentially expressed between two post-bifurcation branches. Bifurcaiton point is formalized as a fork consisting of a root and two leaves. Below we select a root and two leaves:
 
@@ -363,7 +397,7 @@ A particularly interesting implication of the tree is analysis of bifurcation po
 plotppt(ppt,emb,tips=TRUE,forks=FALSE,cex.tree = 0.2,lwd.tree = 2)
 ```
 
-![plot of chunk unnamed-chunk-40](figure/unnamed-chunk-40-1.png)
+![plot of chunk unnamed-chunk-43](figure/unnamed-chunk-43-1.png)
 
 
 ```r
@@ -375,6 +409,7 @@ A routine `test.fork.genes` performs assessment of genes differentially expressi
 
 ```r
 fork.de <- test.fork.genes(ppt,fpm[,],root=root,leaves=leaves,n.mapping = 1)
+## Error in dimnames(x) <- dn: length of 'dimnames' [1] not equal to array extent
 ```
 
 A table `fork.de` contains summary statistics of fold change `effect`, p-value `p` and adjusted p-value `fdr`  of differential expression between branches, magnitude `pd1.a` and p-value `pd1.p` of expression changes from derivative branch 1 to progenitor branch:
@@ -402,13 +437,13 @@ Choice of parameters `sigma` and `lambda` for tree reconstruction is of crucial 
 sig <- sig.explore(X=wgm[,nc.cells],metrics="cosine",sig.lims=seq(0.01,0.1,0.01),plot=TRUE)
 ```
 
-![plot of chunk unnamed-chunk-45](figure/unnamed-chunk-45-1.png)
+![plot of chunk unnamed-chunk-48](figure/unnamed-chunk-48-1.png)
 
 Optimum sigma:
 
 ```r
 sig
-## [1] 0.04
+## [1] 0.03
 ```
 
 Parameter `lambda` is selected upon optimal `sigma` using entropy criteria. However, the estimate is not fully robust. Using routine `lambda.explore` we additionally show trees for two intermediate `lambda` parameters and leave a final choice or further exploration to the user:
@@ -417,4 +452,4 @@ Parameter `lambda` is selected upon optimal `sigma` using entropy criteria. Howe
 lambda.stat <- lambda.explore(X=wgm[,nc.cells],M=length(nc.cells),metrics="cosine",emb=emb,sigma=sig,base=2)
 ```
 
-![plot of chunk unnamed-chunk-47](figure/unnamed-chunk-47-1.png)
+![plot of chunk unnamed-chunk-50](figure/unnamed-chunk-50-1.png)

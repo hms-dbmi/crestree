@@ -29,6 +29,7 @@ library(Rcpp)
 library(inline) 
 library(RcppArmadillo) 
 library(pbapply)
+library(glmnet)
 
 library(crestree)
 ```
@@ -259,6 +260,28 @@ head(stat.subtree[order(stat.subtree$pval),])
 
 ```{r, echo=FALSE, results='asis'}
 knitr::kable(head(stat.subtree[order(stat.subtree$pval),]))
+```
+
+## Inference of transcription factors regulatory activity
+
+Expression levels of a transcription factor (TF) do not yet inform about its regulatory impact on target genes. Here we use coordinated changes of expression levels of TF target genes as a readout of regulatory impact. For that, we use a matrix of predicted target-TF scores (generated as described in the paper):
+
+```{r}
+str(crest$motmat)
+```
+
+Smoothed expression levels `ppt$fit.list[[1]]` of targets are modeled as a linear combination of unknown TF activities using lasso regression:
+```{r}
+act <- activity.lasso(ppt$fit.list[[1]],crest$motmat)
+dim(act)
+```
+
+Matrix `act` contains predicted activity of each TF in each cell. Tree-projected pattern of _Neurog2_ activity indicates its regulatory impact in sensory branch:
+```{r,fig.width = 3, fig.height = 3}
+tf <- "Neurog2"
+
+par(mar=c(4,4,3,1))
+plotppt(ppt,emb,pattern.cell = act[tf,],gene=tf,cex.main=0.5,cex.tree = 1,lwd.tree = 0.1,par=FALSE,pallete = colorRampPalette(c("darkgreen","gray50","orange")) )
 ```
 
 ## Analysis of bifurcation point

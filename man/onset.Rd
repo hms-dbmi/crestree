@@ -6,7 +6,8 @@
 \usage{
 onset(ppt, geneset, nodes = NULL, expr, alp = 20, w = 40,
   step = 10, n.cells = 280, mappings = 1, do.perm = FALSE,
-  winperm = w, n.cores = 1, permut.n = 10, n.cores1 = 1)
+  winperm = w, n.cores = parallel::detectCores()/2, permut.n = 10,
+  n.cores1 = 1)
 }
 \arguments{
 \item{ppt}{ppt tree}

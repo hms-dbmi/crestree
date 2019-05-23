@@ -4,7 +4,7 @@
 \alias{classify.genes}
 \title{Classify tree-associated genes}
 \usage{
-classify.genes(r, n.cores = 20, cutoff = 0.2)
+classify.genes(r, n.cores = parallel::detectCores()/2, cutoff = 0.2)
 }
 \arguments{
 \item{r}{tree}

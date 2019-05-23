@@ -14,6 +14,7 @@
 #'   \item{emb}{2D t-SNE embedding}
 #'   \item{clcol}{cell colors of clusters}
 #' \item{nc.cells}{a vector of neural crest cells. Other cells are neural tube cells.}
+#' \item{motmat}{a matrix of target-TF scores}
 #' }
 #'
 #' @keywords datasets
