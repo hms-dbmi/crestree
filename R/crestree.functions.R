@@ -195,7 +195,7 @@ ppt.tree <- function(X,W=NA,emb=NA,M,init=NULL,plot=TRUE,output=TRUE,lambda=1e1,
 
   if (plot==TRUE){plotppt(list(F=F.mat,B=B,R=R,L=L,lambda=lambda,sigma=sigma),emb,...)}
 
-  g = graph.adjacency(B,mode="undirected");tips = V(g)[degree(g)==1];forks = V(g)[degree(g)>2]
+  g = graph.adjacency(B,mode="undirected");tips = V(g)[igraph::degree(g)==1];forks = V(g)[igraph::degree(g)>2]
 
   score = c( sum( t(1-cor.mat(F.mat,X))*R)/nrow(R), sigma/nrow(R)*sum(R*log(R),na.rm=T),lambda/2*sum(d*B))
 
@@ -445,8 +445,8 @@ cleanup.branches <- function(r,tips.remove=NULL,min.branch.length=3) {
   #colnames(r$F) <- NULL; colnames(r$B) <- rownames(r$B) <- NULL;
   repeat {
     g <- graph.adjacency(r$B>0,mode="undirected")
-    leaves <- V(g)[degree(g)==1]
-    branches <- V(g)[degree(g)>2]
+    leaves <- V(g)[igraph::degree(g)==1]
+    branches <- V(g)[igraph::degree(g)>2]
     bd <-shortest.paths(g,v=leaves,to=branches)
     ivi <- which(apply(bd,1,min)<=min.branch.length)
     ivi <- unique( c(ivi, which( leaves %in% tips.remove) ) )
@@ -469,7 +469,7 @@ cleanup.branches <- function(r,tips.remove=NULL,min.branch.length=3) {
   }
   colnames(r$F) <- colnames(r$B) <- rownames(r$B) <- as.character(1:nrow(r$B));
 
-  g = graph.adjacency(r$B,mode="undirected");r$tips = V(g)[degree(g)==1];r$forks = V(g)[degree(g)>2]
+  g = graph.adjacency(r$B,mode="undirected");r$tips = V(g)[igraph::degree(g)==1];r$forks = V(g)[igraph::degree(g)>2]
 
   r
 }
@@ -495,7 +495,7 @@ setroot <- function(r,root=NULL,plot=TRUE) {
   colnames(pp.info)=c("PP","time","seg")
 
   # infer all segments (and put in segs) of the tree
-  nodes <- V(g)[ degree(g)!=2 ]
+  nodes <- V(g)[ igraph::degree(g)!=2 ]
   pp.segs = data.frame(n=numeric(),from=character(),to=character(),d=numeric())
   for (i in 1:(length(nodes)-1) ){
     for (j in (i+1):length(nodes)){
@@ -743,7 +743,8 @@ fit.associated.genes <- function(r,X,n.map=1,n.cores=parallel::detectCores()/2,m
   #})
 
 
-  ft.summary <- matrix(0,nrow=nrow(gtl[[1]]),ncol=ncol(gtl[[1]])); rownames(ft.summary) <- rownames(gtl[[1]]); colnames(ft.summary) <- colnames(gtl[[1]])
+  ft.summary <- matrix(0,nrow=nrow(gtl[[1]]),ncol=ncol(gtl[[1]]))
+  rownames(ft.summary) <- rownames(gtl[[1]]); colnames(ft.summary) <- colnames(gtl[[1]])
   if (length(gtl)>=1){
     for (k in 1:length(gtl)){
       #indx <- unlist(lapply(1:nrow(r$cell.summary),function(i) {
@@ -1271,7 +1272,7 @@ activation.fork <- function(r,fork.de,mat,root,leaves,deriv.cutoff = 0.015,gamma
 extract.subtree = function(r,nodes){
   g <- graph.adjacency(r$B>0,mode="undirected")
   if ( sum(!nodes%in%V(g)) > 0 ) {stop(paste("the following nodes are not in the tree:",nodes[!nodes%in%V(g)],collapse = " ") )}
-  if ( sum( degree(g)==2 & (V(g) %in% nodes) ) > 0 ) {stop( paste("the following nodes are nethier terminal nor fork:",nodes[nodes %in% V(g)[V(g)==2] ],collapse=" ") )}
+  if ( sum( igraph::degree(g)==2 & (V(g) %in% nodes) ) > 0 ) {stop( paste("the following nodes are nethier terminal nor fork:",nodes[nodes %in% V(g)[V(g)==2] ],collapse=" ") )}
   vpath = get.shortest.paths(g,nodes[1],nodes)
   v = c()
   for (i in 1:length(vpath$vpath)){
