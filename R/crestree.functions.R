@@ -557,8 +557,8 @@ project.cells.onto.ppt <- function(r,emb=NULL,n.mapping=1) {
         alpha <- runif(length(vcells))
         f <- abs( (sqrt(alpha*p1^2+(1-alpha)*p0^2)-p0)/(p1-p0) )
         ndf$t <- r$pp.info[ndf$v0,]$time+(r$pp.info[ndf$v1,]$time-r$pp.info[ndf$v0,]$time)*alpha
-        ndf$seg <- r$pp.info[ndf$v0,]$seg
-        ndf$color <- r$pp.info[ndf$v0,]$color
+        ndf$seg <- ifelse( r$pp.info[ndf$v0,]$PP %in% r$forks,r$pp.info[ndf$v1,]$seg,r$pp.info[ndf$v0,]$seg)
+        ndf$color <- ifelse( r$pp.info[ndf$v0,]$PP %in% r$forks,r$pp.info[ndf$v1,]$color,r$pp.info[ndf$v0,]$color)
 
         ndf
       } else {
