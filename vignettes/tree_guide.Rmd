@@ -35,7 +35,7 @@ library(crestree)
 ```
   
 ## Loading the data
-Tree reconstruction requires a gene expression matrix. Addditionally, exploration of the tree on top of existing 2D embedding significantly simplifies interpretation. It is thus important to provide embedding of cells (e.g. t-SNE, PCA etc.). The following command uploads processed neural crest data, including expression matrix and t-SNE embedding:
+Tree reconstruction requires a gene expression matrix. Addditionally, exploration of the tree on top of existing 2D embedding significantly simplifies interpretation. It is thus important to provide embedding of cells (e.g. t-SNE, PCA etc.). The following command uploads processed neural crest data ( [PAGODA](http://hms-dbmi.github.io/scde/index.html) pipeline used to preprocess the data can be found [here](https://github.com/hms-dbmi/crestree/blob/master/pagoda_call/pagoda_call.R)), including expression matrix and t-SNE embedding:
 ```{r}
 data(crest)
 ```
