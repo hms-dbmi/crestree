@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 source("pagoda_call/pagoda_call.functions.R")
 
 ### download count matrix
